@@ -1,1 +1,1 @@
-<Solution />
+<Solution><Folder Name="/src/"><Project Path="src/AssistaJunto.Domain/AssistaJunto.Domain.csproj" /><Project Path="src/AssistaJunto.Application/AssistaJunto.Application.csproj" /><Project Path="src/AssistaJunto.Infrastructure/AssistaJunto.Infrastructure.csproj" /><Project Path="src/AssistaJunto.API/AssistaJunto.API.csproj" /><Project Path="src/AssistaJunto.Client/AssistaJunto.Client.csproj" /></Folder></Solution>

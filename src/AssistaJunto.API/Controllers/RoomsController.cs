@@ -1,0 +1,87 @@
+using System.Security.Claims;
+using AssistaJunto.Application.DTOs;
+using AssistaJunto.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace AssistaJunto.API.Controllers;
+
+[Authorize]
+[ApiController]
+[Route("api/[controller]")]
+public class RoomsController : ControllerBase
+{
+    private readonly IRoomService _roomService;
+    private readonly IPlaylistService _playlistService;
+
+    public RoomsController(IRoomService roomService, IPlaylistService playlistService)
+    {
+        _roomService = roomService;
+        _playlistService = playlistService;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateRoom([FromBody] CreateRoomRequest request)
+    {
+        var userId = GetUserId();
+        var room = await _roomService.CreateRoomAsync(request, userId);
+        return CreatedAtAction(nameof(GetRoom), new { hash = room.Hash }, room);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetActiveRooms()
+    {
+        var rooms = await _roomService.GetActiveRoomsAsync();
+        return Ok(rooms);
+    }
+
+    [HttpGet("{hash}")]
+    public async Task<IActionResult> GetRoom(string hash)
+    {
+        var room = await _roomService.GetRoomByHashAsync(hash);
+        return room is not null ? Ok(room) : NotFound();
+    }
+
+    [HttpPost("{hash}/join")]
+    public async Task<IActionResult> JoinRoom(string hash, [FromBody] JoinRoomRequest request)
+    {
+        var allowed = await _roomService.JoinRoomAsync(hash, request.Password);
+        if (!allowed) return Unauthorized("Senha incorreta ou sala não encontrada.");
+
+        var state = await _roomService.GetRoomStateAsync(hash);
+        return Ok(state);
+    }
+
+    [HttpPost("{hash}/playlist")]
+    public async Task<IActionResult> AddToPlaylist(string hash, [FromBody] AddToPlaylistRequest request)
+    {
+        var userId = GetUserId();
+        var item = await _playlistService.AddToPlaylistAsync(hash, request, userId);
+        return Ok(item);
+    }
+
+    [HttpDelete("{hash}/playlist/{itemId:guid}")]
+    public async Task<IActionResult> RemoveFromPlaylist(string hash, Guid itemId)
+    {
+        await _playlistService.RemoveFromPlaylistAsync(hash, itemId);
+        return NoContent();
+    }
+
+    [HttpGet("{hash}/playlist")]
+    public async Task<IActionResult> GetPlaylist(string hash)
+    {
+        var playlist = await _playlistService.GetPlaylistAsync(hash);
+        return Ok(playlist);
+    }
+
+    [HttpDelete("{hash}")]
+    public async Task<IActionResult> CloseRoom(string hash)
+    {
+        var userId = GetUserId();
+        await _roomService.CloseRoomAsync(hash, userId);
+        return NoContent();
+    }
+
+    private Guid GetUserId() =>
+        Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+}

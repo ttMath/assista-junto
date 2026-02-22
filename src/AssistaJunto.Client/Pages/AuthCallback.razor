@@ -1,0 +1,74 @@
+@page "/auth/callback"
+@inject AuthStateService AuthState
+@inject ApiService Api
+@inject NavigationManager Nav
+
+<PageTitle>Autenticando...</PageTitle>
+
+<div class="d-flex flex-column align-items-center justify-content-center" style="min-height:70vh">
+    <div class="spinner-border text-primary mb-3" role="status" style="@(_processing ? "" : "display:none")">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <h3>@_message</h3>
+</div>
+
+@code {
+    private string _message = "Autenticando com Discord...";
+    private bool _processing = true;
+
+    [SupplyParameterFromQuery(Name = "token")]
+    public string? Token { get; set; }
+
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(Error))
+        {
+            _message = $"Erro na autenticação: {Error}";
+            _processing = false;
+            StateHasChanged();
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(Token))
+        {
+            await AuthState.SetTokenAsync(Token);
+
+            try
+            {
+                var user = await Api.GetCurrentUserAsync();
+                if (user is not null)
+                {
+                    AuthState.SetCurrentUser(user);
+                    _message = "Login realizado com sucesso! Redirecionando...";
+                    _processing = false;
+                    StateHasChanged();
+                    await Task.Delay(800);
+                    Nav.NavigateTo("/", forceLoad: true);
+                }
+                else
+                {
+                    _message = "Erro: usuário não encontrado na API.";
+                    _processing = false;
+                    await AuthState.LogoutAsync();
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                _message = $"Erro ao carregar dados do usuário: {ex.Message}";
+                _processing = false;
+                await AuthState.LogoutAsync();
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            _message = "Token não encontrado. Tente fazer login novamente.";
+            _processing = false;
+            StateHasChanged();
+        }
+    }
+}

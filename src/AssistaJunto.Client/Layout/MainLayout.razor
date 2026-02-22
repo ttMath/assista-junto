@@ -1,0 +1,65 @@
+﻿@inherits LayoutComponentBase
+@inject AuthStateService AuthState
+@inject ApiService Api
+@inject NavigationManager Nav
+@implements IDisposable
+
+<div class="page">
+    <header class="top-bar d-flex align-items-center justify-content-between px-4 py-2 bg-dark text-white">
+        <a href="/" class="text-decoration-none text-white fw-bold fs-4">🎬 Assista Junto — JAÇA CITY</a>
+        <div class="d-flex align-items-center gap-3">
+            @if (AuthState.IsAuthenticated && AuthState.CurrentUser is not null)
+            {
+                <img src="@AuthState.CurrentUser.AvatarUrl" alt="avatar" class="rounded-circle" width="32" height="32" />
+                <span>@AuthState.CurrentUser.DisplayName</span>
+                <button class="btn btn-outline-light btn-sm" @onclick="Logout">Sair</button>
+            }
+        </div>
+    </header>
+
+    <main class="content-area">
+        @Body
+    </main>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            AuthState.OnAuthStateChanged += OnAuthChanged;
+            await AuthState.InitializeAsync();
+
+            if (AuthState.IsAuthenticated && AuthState.CurrentUser is null)
+            {
+                try
+                {
+                    var user = await Api.GetCurrentUserAsync();
+                    if (user is not null)
+                        AuthState.SetCurrentUser(user);
+                    else
+                        await AuthState.LogoutAsync();
+                }
+                catch
+                {
+                    await AuthState.LogoutAsync();
+                }
+            }
+
+            StateHasChanged();
+        }
+    }
+
+    private void OnAuthChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task Logout()
+    {
+        await AuthState.LogoutAsync();
+        Nav.NavigateTo("/", forceLoad: true);
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnAuthStateChanged -= OnAuthChanged;
+    }
+}

@@ -1,0 +1,15 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.top-bar {
+    background-color: #1a1a2e;
+    border-bottom: 2px solid #5c2d91;
+}
+
+.content-area {
+    flex: 1;
+    padding: 0;
+}

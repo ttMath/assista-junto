@@ -1,0 +1,215 @@
+﻿@page "/"
+@inject AuthStateService AuthState
+@inject ApiService Api
+@inject NavigationManager Nav
+@inject IConfiguration Config
+
+<PageTitle>Assista Junto — JAÇA CITY</PageTitle>
+
+@if (!_initialized)
+{
+    <div class="d-flex justify-content-center align-items-center" style="min-height:70vh">
+        <p>Carregando...</p>
+    </div>
+}
+else if (!AuthState.IsAuthenticated)
+{
+    <div class="d-flex flex-column align-items-center justify-content-center" style="min-height:70vh">
+        <h1 class="mb-4">🎬 Assista Junto</h1>
+        <p class="lead text-muted mb-4">Plataforma de watch party exclusiva do servidor JAÇA CITY</p>
+        <a href="@(_apiBaseUrl)/api/auth/discord" class="btn btn-primary btn-lg">
+            🎮 Entrar com Discord
+        </a>
+    </div>
+}
+else
+{
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>🏠 Lobby — Salas Ativas</h2>
+            <button class="btn btn-success" @onclick="() => _showCreateModal = true">+ Criar Sala</button>
+        </div>
+
+        @if (_rooms is null)
+        {
+            <p>Carregando salas...</p>
+        }
+        else if (_rooms.Count == 0)
+        {
+            <div class="alert alert-info">Nenhuma sala ativa. Crie a primeira!</div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var room in _rooms)
+                {
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">@room.Name @(room.HasPassword ? "🔒" : "")</h5>
+                                <p class="card-text text-muted">Criada por @room.OwnerDisplayName</p>
+                                <p class="card-text"><small>@room.Playlist.Count vídeos na playlist</small></p>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-primary w-100" @onclick="() => EnterRoom(room)">Entrar</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (_showCreateModal)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Criar Nova Sala</h5>
+                        <button type="button" class="btn-close" @onclick="() => _showCreateModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nome da Sala</label>
+                            <input type="text" class="form-control" @bind="_newRoomName" placeholder="Ex: Noite de filmes" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Senha (opcional)</label>
+                            <input type="password" class="form-control" @bind="_newRoomPassword" placeholder="Deixe vazio para sala aberta" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="() => _showCreateModal = false">Cancelar</button>
+                        <button class="btn btn-success" @onclick="CreateRoom" disabled="@string.IsNullOrWhiteSpace(_newRoomName)">Criar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (_showPasswordModal)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5)">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Sala protegida 🔒</h5>
+                        <button type="button" class="btn-close" @onclick="() => _showPasswordModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="password" class="form-control" @bind="_joinPassword" placeholder="Digite a senha" />
+                        @if (_passwordError)
+                        {
+                            <small class="text-danger">Senha incorreta.</small>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" @onclick="SubmitPassword">Entrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<RoomModel>? _rooms;
+    private bool _showCreateModal;
+    private bool _showPasswordModal;
+    private bool _passwordError;
+    private string _newRoomName = "";
+    private string? _newRoomPassword;
+    private string? _joinPassword;
+    private RoomModel? _pendingRoom;
+    private string _apiBaseUrl = "";
+    private bool _initialized;
+
+    protected override void OnInitialized()
+    {
+        _apiBaseUrl = Config["ApiBaseUrl"] ?? "https://localhost:7001";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthState.InitializeAsync();
+
+            if (AuthState.IsAuthenticated)
+            {
+                try
+                {
+                    if (AuthState.CurrentUser is null)
+                    {
+                        var user = await Api.GetCurrentUserAsync();
+                        if (user is not null)
+                            AuthState.SetCurrentUser(user);
+                        else
+                        {
+                            await AuthState.LogoutAsync();
+                            _initialized = true;
+                            StateHasChanged();
+                            return;
+                        }
+                    }
+
+                    _rooms = await Api.GetActiveRoomsAsync();
+                }
+                catch
+                {
+                    await AuthState.LogoutAsync();
+                }
+            }
+
+            _initialized = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CreateRoom()
+    {
+        var room = await Api.CreateRoomAsync(new CreateRoomModel
+        {
+            Name = _newRoomName,
+            Password = _newRoomPassword
+        });
+
+        if (room is not null)
+        {
+            _showCreateModal = false;
+            Nav.NavigateTo($"/sala/{room.Hash}");
+        }
+    }
+
+    private void EnterRoom(RoomModel room)
+    {
+        if (room.HasPassword)
+        {
+            _pendingRoom = room;
+            _joinPassword = null;
+            _passwordError = false;
+            _showPasswordModal = true;
+        }
+        else
+        {
+            Nav.NavigateTo($"/sala/{room.Hash}");
+        }
+    }
+
+    private async Task SubmitPassword()
+    {
+        if (_pendingRoom is null) return;
+
+        var state = await Api.JoinRoomAsync(_pendingRoom.Hash, _joinPassword);
+        if (state is not null)
+        {
+            _showPasswordModal = false;
+            Nav.NavigateTo($"/sala/{_pendingRoom.Hash}");
+        }
+        else
+        {
+            _passwordError = true;
+        }
+    }
+}

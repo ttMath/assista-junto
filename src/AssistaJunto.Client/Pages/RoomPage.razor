@@ -1,0 +1,475 @@
+@page "/sala/{RoomHash}"
+@inject ApiService Api
+@inject AuthStateService AuthState
+@inject RoomHubService Hub
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>Sala — Assista Junto</PageTitle>
+
+@if (_room is null)
+{
+    <div class="d-flex justify-content-center mt-5"><p>Carregando sala...</p></div>
+}
+else
+{
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <!-- Player + Controles -->
+            <div class="col-lg-8">
+                <h4>@_room.Name</h4>
+
+                <div class="ratio ratio-16x9 mb-3 bg-dark rounded">
+                    <div id="yt-player"></div>
+                </div>
+
+                <!-- Controles do player -->
+                <div class="d-flex gap-2 mb-3 align-items-center">
+                    <button class="btn btn-outline-secondary" @onclick="OnPrevious" title="Anterior">⏮</button>
+                    @if (_isPlaying)
+                    {
+                        <button class="btn btn-outline-primary" @onclick="OnPause" title="Pausar">⏸</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-primary" @onclick="OnPlay" title="Reproduzir">▶</button>
+                    }
+                    <button class="btn btn-outline-secondary" @onclick="OnNext" title="Próximo">⏭</button>
+
+                    <span class="ms-3 text-muted small">Volume (local):</span>
+                    <input type="range" min="0" max="100" @bind="_volume" @bind:event="oninput" @bind:after="OnVolumeChanged" style="width:120px" />
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleMute">@(_isMuted ? "🔇" : "🔊")</button>
+                </div>
+
+                <!-- Adicionar à playlist -->
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" @bind="_youtubeUrl" placeholder="Cole o link do YouTube ou playlist..." />
+                    <button class="btn btn-success" @onclick="AddVideo" disabled="@_isAddingVideos">
+                        @if (_isAddingVideos)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                            <span>Adicionando...</span>
+                        }
+                        else
+                        {
+                            <span>+ Adicionar</span>
+                        }
+                    </button>
+                </div>
+
+                <!-- Playlist -->
+                <h5>📋 Playlist (@_playlist.Count vídeos)</h5>
+                <div class="list-group mb-3" style="max-height:300px;overflow-y:auto">
+                    @for (int i = 0; i < _playlist.Count; i++)
+                    {
+                        var idx = i;
+                        var item = _playlist[i];
+                        <div class="list-group-item d-flex align-items-center @(i == _currentVideoIndex ? "active" : "")">
+                            <img src="@item.ThumbnailUrl" alt="" width="80" class="me-3 rounded" />
+                            <div class="flex-grow-1">
+                                <strong>@item.Title</strong>
+                                <br /><small class="@(i == _currentVideoIndex ? "" : "text-muted")">Adicionado por @item.AddedByDisplayName</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveVideo(item.Id)">✕</button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Chat -->
+            <div class="col-lg-4">
+                <h5>💬 Chat</h5>
+                <div class="border rounded p-2 mb-2 bg-light" style="height:500px;overflow-y:auto" @ref="_chatContainer">
+                    @foreach (var msg in _chatMessages)
+                    {
+                        <div class="mb-2">
+                            <img src="@msg.UserAvatarUrl" alt="" width="24" class="rounded-circle me-1" />
+                            <strong>@msg.UserDisplayName</strong>
+                            <small class="text-muted ms-1">@msg.SentAt.ToLocalTime().ToString("HH:mm")</small>
+                            <div class="ms-4">@msg.Content</div>
+                        </div>
+                    }
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" @bind="_chatInput" @onkeydown="OnChatKeyDown" placeholder="Digite uma mensagem..." />
+                    <button class="btn btn-primary" @onclick="SendChat">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string RoomHash { get; set; } = "";
+
+    private RoomModel? _room;
+    private List<PlaylistItemModel> _playlist = [];
+    private List<ChatMessageModel> _chatMessages = [];
+    private int _currentVideoIndex;
+    private bool _isPlaying;
+    private string? _currentVideoId;
+    private string _youtubeUrl = "";
+    private string _chatInput = "";
+    private int _volume = 80;
+    private bool _isMuted;
+    private bool _playerInitialized;
+    private bool _playerReady;
+    private bool _isAddingVideos;
+    private DotNetObjectReference<RoomPage>? _dotNetRef;
+    private ElementReference _chatContainer;
+
+    private DateTime _lastRemoteActionTime = DateTime.MinValue;
+    private const int RemoteCooldownMs = 1500;
+    private bool IsRemoteCooldown => (DateTime.UtcNow - _lastRemoteActionTime).TotalMilliseconds < RemoteCooldownMs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthState.IsAuthenticated)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        _room = await Api.GetRoomAsync(RoomHash);
+        if (_room is null)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        _playlist = _room.Playlist;
+        _currentVideoIndex = _room.CurrentVideoIndex;
+        _isPlaying = _room.IsPlaying;
+
+        Hub.OnRoomStateReceived += OnRoomState;
+        Hub.OnPlayerActionReceived += OnPlayerAction;
+        Hub.OnChatMessageReceived += OnChatMessage;
+        Hub.OnPlaylistUpdated += OnPlaylistItem;
+
+        await Hub.ConnectAsync();
+        await Hub.JoinRoomAsync(RoomHash);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_room is not null && !_playerInitialized)
+        {
+            _playerInitialized = true;
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("youtubePlayer.initialize", "yt-player", _dotNetRef);
+            await JS.InvokeVoidAsync("youtubePlayer.setVolume", _volume);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnPlayerReady()
+    {
+        _playerReady = true;
+        _lastRemoteActionTime = DateTime.UtcNow;
+
+        if (_playlist.Count > 0 && _currentVideoIndex < _playlist.Count)
+        {
+            _currentVideoId = _playlist[_currentVideoIndex].VideoId;
+            var startTime = _room?.CurrentTime ?? 0;
+
+            if (_isPlaying)
+                await JS.InvokeVoidAsync("youtubePlayer.loadVideo", _currentVideoId, startTime);
+            else
+                await JS.InvokeVoidAsync("youtubePlayer.cueVideo", _currentVideoId, startTime);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnPlayerStateChanged(int state)
+    {
+        switch (state)
+        {
+            case 0:
+                _isPlaying = false;
+                if (_currentVideoIndex < _playlist.Count - 1)
+                    await OnNext();
+                break;
+
+            case 1:
+                _isPlaying = true;
+                if (!IsRemoteCooldown)
+                {
+                    var time = await JS.InvokeAsync<double>("youtubePlayer.getCurrentTime");
+                    await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 0, SeekTime = time });
+                }
+                break;
+
+            case 2:
+                _isPlaying = false;
+                if (!IsRemoteCooldown)
+                {
+                    var time = await JS.InvokeAsync<double>("youtubePlayer.getCurrentTime");
+                    await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 1, SeekTime = time });
+                }
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnPlayerSeeked(double seekTime)
+    {
+        if (!IsRemoteCooldown)
+        {
+            await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 2, SeekTime = seekTime });
+        }
+    }
+
+    private async Task OnPlay()
+    {
+        await JS.InvokeVoidAsync("youtubePlayer.play");
+    }
+
+    private async Task OnPause()
+    {
+        await JS.InvokeVoidAsync("youtubePlayer.pause");
+    }
+
+    private async Task OnNext()
+    {
+        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 4 });
+        await Hub.SyncStateAsync(RoomHash);
+    }
+
+    private async Task OnPrevious()
+    {
+        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 5 });
+        await Hub.SyncStateAsync(RoomHash);
+    }
+
+    private void OnRoomState(RoomStateModel state)
+    {
+        InvokeAsync(async () =>
+        {
+            _lastRemoteActionTime = DateTime.UtcNow;
+            _currentVideoIndex = state.CurrentVideoIndex;
+            _isPlaying = state.IsPlaying;
+            _playlist = state.Playlist;
+
+            if (_playerReady && state.VideoId is not null)
+            {
+                var startTime = state.CurrentTime > 0 ? state.CurrentTime : 0;
+
+                if (_currentVideoId != state.VideoId)
+                {
+                    _currentVideoId = state.VideoId;
+                    if (state.IsPlaying)
+                        await JS.InvokeVoidAsync("youtubePlayer.loadVideo", _currentVideoId, startTime);
+                    else
+                        await JS.InvokeVoidAsync("youtubePlayer.cueVideo", _currentVideoId, startTime);
+                }
+                else
+                {
+                    if (startTime > 0)
+                        await JS.InvokeVoidAsync("youtubePlayer.seekTo", startTime);
+
+                    if (state.IsPlaying)
+                        await JS.InvokeVoidAsync("youtubePlayer.play");
+                    else
+                        await JS.InvokeVoidAsync("youtubePlayer.pause");
+                }
+            }
+
+            _currentVideoId = state.VideoId;
+            StateHasChanged();
+        });
+    }
+
+    private void OnPlayerAction(PlayerActionModel action)
+    {
+        InvokeAsync(async () =>
+        {
+            _lastRemoteActionTime = DateTime.UtcNow;
+
+            switch (action.Action)
+            {
+                case 0:
+                    _isPlaying = true;
+                    if (action.SeekTime.HasValue)
+                        await JS.InvokeVoidAsync("youtubePlayer.seekTo", action.SeekTime.Value);
+                    await JS.InvokeVoidAsync("youtubePlayer.play");
+                    break;
+                case 1:
+                    _isPlaying = false;
+                    if (action.SeekTime.HasValue)
+                        await JS.InvokeVoidAsync("youtubePlayer.seekTo", action.SeekTime.Value);
+                    await JS.InvokeVoidAsync("youtubePlayer.pause");
+                    break;
+                case 2:
+                    if (action.SeekTime.HasValue)
+                        await JS.InvokeVoidAsync("youtubePlayer.seekTo", action.SeekTime.Value);
+                    break;
+                case 4:
+                case 5:
+                    await Hub.SyncStateAsync(RoomHash);
+                    break;
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private void OnChatMessage(ChatMessageModel message)
+    {
+        InvokeAsync(() =>
+        {
+            _chatMessages.Add(message);
+            StateHasChanged();
+        });
+    }
+
+    private void OnPlaylistItem(PlaylistItemModel item)
+    {
+        InvokeAsync(async () =>
+        {
+            var wasEmpty = _playlist.Count == 0;
+            _playlist.Add(item);
+
+            if (wasEmpty && _playerReady)
+            {
+                _lastRemoteActionTime = DateTime.UtcNow;
+                _currentVideoIndex = 0;
+                _currentVideoId = item.VideoId;
+                await JS.InvokeVoidAsync("youtubePlayer.loadVideo", item.VideoId, 0);
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private async Task OnVolumeChanged()
+    {
+        await JS.InvokeVoidAsync("youtubePlayer.setVolume", _volume);
+    }
+
+    private async Task ToggleMute()
+    {
+        _isMuted = !_isMuted;
+        if (_isMuted)
+            await JS.InvokeVoidAsync("youtubePlayer.mute");
+        else
+            await JS.InvokeVoidAsync("youtubePlayer.unmute");
+    }
+
+    private async Task AddVideo()
+    {
+        if (string.IsNullOrWhiteSpace(_youtubeUrl)) return;
+
+        var playlistId = ExtractPlaylistId(_youtubeUrl);
+        if (playlistId is not null)
+        {
+            _isAddingVideos = true;
+            StateHasChanged();
+
+            try
+            {
+                var videoIds = await JS.InvokeAsync<string[]>("youtubePlayer.resolvePlaylist", playlistId);
+
+                foreach (var vid in videoIds)
+                {
+                    var model = new AddToPlaylistModel
+                    {
+                        VideoId = vid,
+                        Title = $"Vídeo {vid}",
+                        ThumbnailUrl = $"https://img.youtube.com/vi/{vid}/mqdefault.jpg"
+                    };
+                    await Hub.AddToPlaylistAsync(RoomHash, model);
+                }
+            }
+            finally
+            {
+                _isAddingVideos = false;
+                _youtubeUrl = "";
+                StateHasChanged();
+            }
+            return;
+        }
+
+        var videoId = ExtractVideoId(_youtubeUrl);
+        if (string.IsNullOrWhiteSpace(videoId)) return;
+
+        var singleModel = new AddToPlaylistModel
+        {
+            VideoId = videoId,
+            Title = $"Vídeo {videoId}",
+            ThumbnailUrl = $"https://img.youtube.com/vi/{videoId}/mqdefault.jpg"
+        };
+
+        await Hub.AddToPlaylistAsync(RoomHash, singleModel);
+        _youtubeUrl = "";
+    }
+
+    private async Task RemoveVideo(Guid itemId)
+    {
+        await Api.RemoveFromPlaylistAsync(RoomHash, itemId);
+        _playlist.RemoveAll(p => p.Id == itemId);
+    }
+
+    private async Task SendChat()
+    {
+        if (string.IsNullOrWhiteSpace(_chatInput)) return;
+        await Hub.SendChatMessageAsync(RoomHash, _chatInput);
+        _chatInput = "";
+    }
+
+    private async Task OnChatKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await SendChat();
+    }
+
+    private static string? ExtractPlaylistId(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url) || !url.Contains("list=")) return null;
+
+        var idx = url.IndexOf("list=") + 5;
+        var end = url.IndexOf('&', idx);
+        return end > 0 ? url[idx..end] : url[idx..];
+    }
+
+    private static string? ExtractVideoId(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+
+        if (url.Contains("v="))
+        {
+            var idx = url.IndexOf("v=") + 2;
+            var end = url.IndexOf('&', idx);
+            return end > 0 ? url[idx..end] : url[idx..];
+        }
+
+        if (url.Contains("youtu.be/"))
+        {
+            var idx = url.IndexOf("youtu.be/") + 9;
+            var end = url.IndexOf('?', idx);
+            return end > 0 ? url[idx..end] : url[idx..];
+        }
+
+        if (url.Length == 11 && !url.Contains('/'))
+            return url;
+
+        return null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Hub.OnRoomStateReceived -= OnRoomState;
+        Hub.OnPlayerActionReceived -= OnPlayerAction;
+        Hub.OnChatMessageReceived -= OnChatMessage;
+        Hub.OnPlaylistUpdated -= OnPlaylistItem;
+
+        await Hub.LeaveRoomAsync(RoomHash);
+
+        if (_playerInitialized)
+            await JS.InvokeVoidAsync("youtubePlayer.destroy");
+
+        _dotNetRef?.Dispose();
+    }
+}

@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using AssistaJunto.Application.DTOs;
 using AssistaJunto.Application.Interfaces;
+using AssistaJunto.API.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace AssistaJunto.API.Controllers;
 
@@ -13,11 +15,13 @@ public class RoomsController : ControllerBase
 {
     private readonly IRoomService _roomService;
     private readonly IPlaylistService _playlistService;
+    private readonly IHubContext<RoomHub> _hubContext;
 
-    public RoomsController(IRoomService roomService, IPlaylistService playlistService)
+    public RoomsController(IRoomService roomService, IPlaylistService playlistService, IHubContext<RoomHub> hubContext)
     {
         _roomService = roomService;
         _playlistService = playlistService;
+        _hubContext = hubContext;
     }
 
     [HttpPost]
@@ -58,6 +62,20 @@ public class RoomsController : ControllerBase
         var userId = GetUserId();
         var item = await _playlistService.AddToPlaylistAsync(hash, request, userId);
         return Ok(item);
+    }
+
+    [HttpPost("{hash}/playlist/from-url")]
+    public async Task<IActionResult> AddPlaylistByUrl(string hash, [FromBody] AddPlaylistByUrlRequest request)
+    {
+        var userId = GetUserId();
+        var result = await _playlistService.AddPlaylistByUrlAsync(hash, request.Url, userId);
+
+        foreach (var item in result.Items)
+        {
+            await _hubContext.Clients.Group(hash).SendAsync("PlaylistUpdated", item);
+        }
+
+        return Ok(result);
     }
 
     [HttpDelete("{hash}/playlist/{itemId:guid}")]

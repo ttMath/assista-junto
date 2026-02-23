@@ -100,6 +100,18 @@ public class Room
         return false;
     }
 
+    public bool JumpToIndex(int index)
+    {
+        if (index >= 0 && index < _playlist.Count)
+        {
+            CurrentVideoIndex = index;
+            CurrentTime = 0;
+            IsPlaying = true;
+            return true;
+        }
+        return false;
+    }
+
     public PlaylistItem? GetCurrentVideo()
     {
         if (CurrentVideoIndex >= 0 && CurrentVideoIndex < _playlist.Count)

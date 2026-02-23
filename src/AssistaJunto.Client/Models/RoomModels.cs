@@ -53,6 +53,12 @@ public class AddToPlaylistModel
     public string ThumbnailUrl { get; set; } = string.Empty;
 }
 
+public class AddPlaylistByUrlResponseModel
+{
+    public List<PlaylistItemModel> Items { get; set; } = [];
+    public int TotalAdded { get; set; }
+}
+
 public class ChatMessageModel
 {
     public Guid Id { get; set; }
@@ -67,4 +73,17 @@ public class PlayerActionModel
     public int Action { get; set; }
     public double? SeekTime { get; set; }
     public string? VideoId { get; set; }
+}
+
+public class RoomUserModel
+{
+    public string DisplayName { get; set; } = string.Empty;
+    public string AvatarUrl { get; set; } = string.Empty;
+}
+
+public class ToastNotification
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Message { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

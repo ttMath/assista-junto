@@ -12,5 +12,6 @@ public interface IRoomService
     Task UpdatePlayerStateAsync(string hash, double currentTime, bool isPlaying);
     Task<bool> NextVideoAsync(string hash);
     Task<bool> PreviousVideoAsync(string hash);
+    Task<bool> JumpToVideoAsync(string hash, int videoIndex);
     Task CloseRoomAsync(string hash, Guid userId);
 }

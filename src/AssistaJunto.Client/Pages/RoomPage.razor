@@ -8,6 +8,21 @@
 
 <PageTitle>Sala — Assista Junto</PageTitle>
 
+<!-- Toast Notifications -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index:1080">
+    @foreach (var toast in _toasts)
+    {
+        <div class="toast show align-items-center text-bg-info border-0 mb-2" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    🟢 <strong>@toast.Message</strong>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" @onclick="() => DismissToast(toast.Id)"></button>
+            </div>
+        </div>
+    }
+</div>
+
 @if (_room is null)
 {
     <div class="d-flex justify-content-center mt-5"><p>Carregando sala...</p></div>
@@ -16,7 +31,7 @@ else
 {
     <div class="container-fluid mt-3">
         <div class="row">
-            <!-- Player + Controles -->
+            <!-- Player + Controles + Usuários na sala -->
             <div class="col-lg-8">
                 <h4>@_room.Name</h4>
 
@@ -42,14 +57,40 @@ else
                     <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleMute">@(_isMuted ? "🔇" : "🔊")</button>
                 </div>
 
+                <!-- Pessoas na sala -->
+                <h5>👥 Na sala (@_roomUsers.Count)</h5>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    @foreach (var user in _roomUsers)
+                    {
+                        <div class="d-flex align-items-center bg-light rounded-pill px-3 py-1 border">
+                            @if (!string.IsNullOrEmpty(user.AvatarUrl))
+                            {
+                                <img src="@user.AvatarUrl" alt="" width="28" height="28" class="rounded-circle me-2" />
+                            }
+                            else
+                            {
+                                <span class="me-2">👤</span>
+                            }
+                            <span class="fw-semibold small">@user.DisplayName</span>
+                        </div>
+                    }
+                    @if (_roomUsers.Count == 0)
+                    {
+                        <span class="text-muted small">Nenhum usuário na sala.</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Playlist + Chat -->
+            <div class="col-lg-4">
                 <!-- Adicionar à playlist -->
                 <div class="input-group mb-3">
-                    <input type="text" class="form-control" @bind="_youtubeUrl" placeholder="Cole o link do YouTube ou playlist..." />
+                    <input type="text" class="form-control" @bind="_youtubeUrl" placeholder="Cole o link do YouTube ou playlist..." disabled="@_isAddingVideos" />
                     <button class="btn btn-success" @onclick="AddVideo" disabled="@_isAddingVideos">
                         @if (_isAddingVideos)
                         {
                             <span class="spinner-border spinner-border-sm me-1"></span>
-                            <span>Adicionando...</span>
+                            <span>Carregando...</span>
                         }
                         else
                         {
@@ -57,6 +98,13 @@ else
                         }
                     </button>
                 </div>
+                @if (_isAddingVideos)
+                {
+                    <div class="alert alert-info d-flex align-items-center mb-3 py-2" role="alert">
+                        <div class="spinner-border spinner-border-sm text-info me-2"></div>
+                        <small>Buscando vídeos da playlist no YouTube, aguarde...</small>
+                    </div>
+                }
 
                 <!-- Playlist -->
                 <h5>📋 Playlist (@_playlist.Count vídeos)</h5>
@@ -65,22 +113,20 @@ else
                     {
                         var idx = i;
                         var item = _playlist[i];
-                        <div class="list-group-item d-flex align-items-center @(i == _currentVideoIndex ? "active" : "")">
+                        <button type="button" class="list-group-item list-group-item-action d-flex align-items-center @(i == _currentVideoIndex ? "active" : "")" @onclick="() => JumpToVideo(idx)">
                             <img src="@item.ThumbnailUrl" alt="" width="80" class="me-3 rounded" />
-                            <div class="flex-grow-1">
+                            <div class="flex-grow-1 text-start">
                                 <strong>@item.Title</strong>
                                 <br /><small class="@(i == _currentVideoIndex ? "" : "text-muted")">Adicionado por @item.AddedByDisplayName</small>
                             </div>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveVideo(item.Id)">✕</button>
-                        </div>
+                            <span class="btn btn-sm btn-outline-danger ms-2" @onclick="() => RemoveVideo(item.Id)" @onclick:stopPropagation="true">✕</span>
+                        </button>
                     }
                 </div>
-            </div>
 
-            <!-- Chat -->
-            <div class="col-lg-4">
+                <!-- Chat -->
                 <h5>💬 Chat</h5>
-                <div class="border rounded p-2 mb-2 bg-light" style="height:500px;overflow-y:auto" @ref="_chatContainer">
+                <div class="border rounded p-2 mb-2 bg-light" style="height:300px;overflow-y:auto" @ref="_chatContainer">
                     @foreach (var msg in _chatMessages)
                     {
                         <div class="mb-2">
@@ -106,6 +152,8 @@ else
     private RoomModel? _room;
     private List<PlaylistItemModel> _playlist = [];
     private List<ChatMessageModel> _chatMessages = [];
+    private List<RoomUserModel> _roomUsers = [];
+    private List<ToastNotification> _toasts = [];
     private int _currentVideoIndex;
     private bool _isPlaying;
     private string? _currentVideoId;
@@ -146,6 +194,9 @@ else
         Hub.OnPlayerActionReceived += OnPlayerAction;
         Hub.OnChatMessageReceived += OnChatMessage;
         Hub.OnPlaylistUpdated += OnPlaylistItem;
+        Hub.OnUserJoined += OnUserJoined;
+        Hub.OnUserLeft += OnUserLeft;
+        Hub.OnUserListReceived += OnUserListReceived;
 
         await Hub.ConnectAsync();
         await Hub.JoinRoomAsync(RoomHash);
@@ -242,6 +293,12 @@ else
     {
         await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 5 });
         await Hub.SyncStateAsync(RoomHash);
+    }
+
+    private async Task JumpToVideo(int index)
+    {
+        if (index == _currentVideoIndex) return;
+        await Hub.JumpToVideoAsync(RoomHash, index);
     }
 
     private void OnRoomState(RoomStateModel state)
@@ -344,6 +401,55 @@ else
         });
     }
 
+    private void OnUserJoined(RoomUserModel user)
+    {
+        InvokeAsync(async () =>
+        {
+            ShowToast($"{user.DisplayName} entrou na sala");
+            StateHasChanged();
+        });
+    }
+
+    private void OnUserLeft(string userName)
+    {
+        InvokeAsync(() =>
+        {
+            ShowToast($"{userName} saiu da sala");
+            StateHasChanged();
+        });
+    }
+
+    private void OnUserListReceived(List<RoomUserModel> users)
+    {
+        InvokeAsync(() =>
+        {
+            _roomUsers = users;
+            StateHasChanged();
+        });
+    }
+
+    private void ShowToast(string message)
+    {
+        var toast = new ToastNotification { Message = message };
+        _toasts.Add(toast);
+        _ = RemoveToastAfterDelay(toast.Id);
+    }
+
+    private async Task RemoveToastAfterDelay(Guid toastId)
+    {
+        await Task.Delay(4000);
+        await InvokeAsync(() =>
+        {
+            _toasts.RemoveAll(t => t.Id == toastId);
+            StateHasChanged();
+        });
+    }
+
+    private void DismissToast(Guid toastId)
+    {
+        _toasts.RemoveAll(t => t.Id == toastId);
+    }
+
     private async Task OnVolumeChanged()
     {
         await JS.InvokeVoidAsync("youtubePlayer.setVolume", _volume);
@@ -362,48 +468,23 @@ else
     {
         if (string.IsNullOrWhiteSpace(_youtubeUrl)) return;
 
-        var playlistId = ExtractPlaylistId(_youtubeUrl);
-        if (playlistId is not null)
+        _isAddingVideos = true;
+        StateHasChanged();
+
+        try
         {
-            _isAddingVideos = true;
-            StateHasChanged();
-
-            try
-            {
-                var videoIds = await JS.InvokeAsync<string[]>("youtubePlayer.resolvePlaylist", playlistId);
-
-                foreach (var vid in videoIds)
-                {
-                    var model = new AddToPlaylistModel
-                    {
-                        VideoId = vid,
-                        Title = $"Vídeo {vid}",
-                        ThumbnailUrl = $"https://img.youtube.com/vi/{vid}/mqdefault.jpg"
-                    };
-                    await Hub.AddToPlaylistAsync(RoomHash, model);
-                }
-            }
-            finally
-            {
-                _isAddingVideos = false;
-                _youtubeUrl = "";
-                StateHasChanged();
-            }
-            return;
+            await Api.AddPlaylistByUrlAsync(RoomHash, _youtubeUrl);
+            _youtubeUrl = "";
         }
-
-        var videoId = ExtractVideoId(_youtubeUrl);
-        if (string.IsNullOrWhiteSpace(videoId)) return;
-
-        var singleModel = new AddToPlaylistModel
+        catch (Exception)
         {
-            VideoId = videoId,
-            Title = $"Vídeo {videoId}",
-            ThumbnailUrl = $"https://img.youtube.com/vi/{videoId}/mqdefault.jpg"
-        };
-
-        await Hub.AddToPlaylistAsync(RoomHash, singleModel);
-        _youtubeUrl = "";
+            // Fallback silencioso — os itens que já foram adicionados aparecem via SignalR
+        }
+        finally
+        {
+            _isAddingVideos = false;
+            StateHasChanged();
+        }
     }
 
     private async Task RemoveVideo(Guid itemId)
@@ -425,45 +506,15 @@ else
             await SendChat();
     }
 
-    private static string? ExtractPlaylistId(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url) || !url.Contains("list=")) return null;
-
-        var idx = url.IndexOf("list=") + 5;
-        var end = url.IndexOf('&', idx);
-        return end > 0 ? url[idx..end] : url[idx..];
-    }
-
-    private static string? ExtractVideoId(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url)) return null;
-
-        if (url.Contains("v="))
-        {
-            var idx = url.IndexOf("v=") + 2;
-            var end = url.IndexOf('&', idx);
-            return end > 0 ? url[idx..end] : url[idx..];
-        }
-
-        if (url.Contains("youtu.be/"))
-        {
-            var idx = url.IndexOf("youtu.be/") + 9;
-            var end = url.IndexOf('?', idx);
-            return end > 0 ? url[idx..end] : url[idx..];
-        }
-
-        if (url.Length == 11 && !url.Contains('/'))
-            return url;
-
-        return null;
-    }
-
     public async ValueTask DisposeAsync()
     {
         Hub.OnRoomStateReceived -= OnRoomState;
         Hub.OnPlayerActionReceived -= OnPlayerAction;
         Hub.OnChatMessageReceived -= OnChatMessage;
         Hub.OnPlaylistUpdated -= OnPlaylistItem;
+        Hub.OnUserJoined -= OnUserJoined;
+        Hub.OnUserLeft -= OnUserLeft;
+        Hub.OnUserListReceived -= OnUserListReceived;
 
         await Hub.LeaveRoomAsync(RoomHash);
 

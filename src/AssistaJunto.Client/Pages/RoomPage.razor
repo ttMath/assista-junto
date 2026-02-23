@@ -1,4 +1,5 @@
 @page "/sala/{RoomHash}"
+@using AssistaJunto.Client.Components
 @inject ApiService Api
 @inject AuthStateService AuthState
 @inject RoomHubService Hub
@@ -12,20 +13,22 @@
 <div class="position-fixed top-0 end-0 p-3" style="z-index:1080">
     @foreach (var toast in _toasts)
     {
-        <div class="toast show align-items-center text-bg-info border-0 mb-2" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">
-                    🟢 <strong>@toast.Message</strong>
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" @onclick="() => DismissToast(toast.Id)"></button>
+        <div class="custom-toast p-3 mb-2 d-flex align-items-center justify-content-between animate__animated animate__fadeInRight">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-info-circle-fill"></i>
+                <span class="fw-medium">@toast.Message</span>
             </div>
+            <button type="button" class="btn-close btn-close-white ms-3" @onclick="() => DismissToast(toast.Id)"></button>
         </div>
     }
 </div>
 
 @if (_room is null)
 {
-    <div class="d-flex justify-content-center mt-5"><p>Carregando sala...</p></div>
+    <div class="d-flex flex-column justify-content-center align-items-center vh-100 bg-black">
+        <div class="spinner-border text-primary mb-3"></div>
+        <p class="text-muted text-uppercase fw-bold small">Sincronizando com a sala...</p>
+    </div>
 }
 else
 {
@@ -33,47 +36,26 @@ else
         <div class="row">
             <!-- Player + Controles + Usuários na sala -->
             <div class="col-lg-8">
-                <h4>@_room.Name</h4>
+                <h4 class="text-white fw-bold">@_room.Name</h4>
 
                 <div class="ratio ratio-16x9 mb-3 bg-dark rounded">
                     <div id="yt-player"></div>
                 </div>
 
                 <!-- Controles do player -->
-                <div class="d-flex gap-2 mb-3 align-items-center">
-                    <button class="btn btn-outline-secondary" @onclick="OnPrevious" title="Anterior">⏮</button>
-                    @if (_isPlaying)
-                    {
-                        <button class="btn btn-outline-primary" @onclick="OnPause" title="Pausar">⏸</button>
-                    }
-                    else
-                    {
-                        <button class="btn btn-outline-primary" @onclick="OnPlay" title="Reproduzir">▶</button>
-                    }
-                    <button class="btn btn-outline-secondary" @onclick="OnNext" title="Próximo">⏭</button>
-
-                    <span class="ms-3 text-muted small">Volume (local):</span>
-                    <input type="range" min="0" max="100" @bind="_volume" @bind:event="oninput" @bind:after="OnVolumeChanged" style="width:120px" />
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleMute">@(_isMuted ? "🔇" : "🔊")</button>
-                </div>
+                <VideoControls IsPlaying="_isPlaying"
+                               Volume="_volume"
+                               IsMuted="_isMuted"
+                               OnPlay="OnPlay"
+                               OnPause="OnPause"
+                               OnNext="OnNext"
+                               OnPrevious="OnPrevious"
+                               OnToggleMute="ToggleMute"
+                               OnVolumeChanged="UpdateVolume" />
 
                 <!-- Pessoas na sala -->
-                <h5>👥 Na sala (@_roomUsers.Count)</h5>
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    @foreach (var user in _roomUsers)
-                    {
-                        <div class="d-flex align-items-center bg-light rounded-pill px-3 py-1 border">
-                            @if (!string.IsNullOrEmpty(user.AvatarUrl))
-                            {
-                                <img src="@user.AvatarUrl" alt="" width="28" height="28" class="rounded-circle me-2" />
-                            }
-                            else
-                            {
-                                <span class="me-2">👤</span>
-                            }
-                            <span class="fw-semibold small">@user.DisplayName</span>
-                        </div>
-                    }
+                    <UserList Users="_roomUsers" RoomOwner="@_room.OwnerDisplayName" />
                     @if (_roomUsers.Count == 0)
                     {
                         <span class="text-muted small">Nenhum usuário na sala.</span>
@@ -82,11 +64,11 @@ else
             </div>
 
             <!-- Playlist + Chat -->
-            <div class="col-lg-4">
+            <div class="col-lg-4" style="margin-top: 2.4rem">
                 <!-- Adicionar à playlist -->
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" @bind="_youtubeUrl" placeholder="Cole o link do YouTube ou playlist..." disabled="@_isAddingVideos" />
-                    <button class="btn btn-success" @onclick="AddVideo" disabled="@_isAddingVideos">
+                    <button class="btn btn-success" @onclick="AddVideo" disabled="@_isAddingVideos" style="background-color:#1b6ec2">
                         @if (_isAddingVideos)
                         {
                             <span class="spinner-border spinner-border-sm me-1"></span>
@@ -107,7 +89,7 @@ else
                 }
 
                 <!-- Playlist -->
-                <h5>📋 Playlist (@_playlist.Count vídeos)</h5>
+                <h5 class="text-white fw-bold">📋 Playlist (@_playlist.Count vídeos)</h5>
                 <div class="list-group mb-3" style="max-height:300px;overflow-y:auto">
                     @for (int i = 0; i < _playlist.Count; i++)
                     {
@@ -125,21 +107,8 @@ else
                 </div>
 
                 <!-- Chat -->
-                <h5>💬 Chat</h5>
-                <div class="border rounded p-2 mb-2 bg-light" style="height:300px;overflow-y:auto" @ref="_chatContainer">
-                    @foreach (var msg in _chatMessages)
-                    {
-                        <div class="mb-2">
-                            <img src="@msg.UserAvatarUrl" alt="" width="24" class="rounded-circle me-1" />
-                            <strong>@msg.UserDisplayName</strong>
-                            <small class="text-muted ms-1">@msg.SentAt.ToLocalTime().ToString("HH:mm")</small>
-                            <div class="ms-4">@msg.Content</div>
-                        </div>
-                    }
-                </div>
-                <div class="input-group">
-                    <input type="text" class="form-control" @bind="_chatInput" @onkeydown="OnChatKeyDown" placeholder="Digite uma mensagem..." />
-                    <button class="btn btn-primary" @onclick="SendChat">Enviar</button>
+                <div class="flex-grow-1">
+                    <ChatRoom Messages="_chatMessages" OnSendMessage="HandleSendMessage" />
                 </div>
             </div>
         </div>
@@ -200,6 +169,17 @@ else
 
         await Hub.ConnectAsync();
         await Hub.JoinRoomAsync(RoomHash);
+    }
+
+    private async Task HandleSendMessage(string message)
+    {
+        await Hub.SendChatMessageAsync(RoomHash, message);
+    }
+
+    private async Task UpdateVolume(int newVolume)
+    {
+        _volume = newVolume;
+        await OnVolumeChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

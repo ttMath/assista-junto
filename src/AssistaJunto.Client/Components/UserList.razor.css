@@ -1,0 +1,66 @@
+﻿.fw-black {
+    font-weight: 900;
+}
+
+.ls-wider {
+    letter-spacing: 0.1em;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #23a55a;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #23a55a;
+}
+
+.user-card-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 6px 14px 6px 8px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+    .user-card-pill:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #5865F2;
+        transform: translateY(-2px);
+    }
+
+.avatar-wrapper {
+    position: relative;
+    display: flex;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 10px;
+    height: 10px;
+    background-color: #23a55a;
+    border: 2px solid #000;
+    border-radius: 50%;
+}
+
+.user-name {
+    color: #f2f3f5;
+    font-weight: 600;
+    font-size: 0.85rem;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.owner-badge {
+    font-size: 0.75rem;
+    margin-left: -2px;
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+}

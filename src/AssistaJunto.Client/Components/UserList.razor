@@ -1,0 +1,47 @@
+﻿<div class="users-section mt-4">
+    <div class="d-flex align-items-center gap-2 mb-3"> <div class="status-dot"></div> <h6 class="text-uppercase fw-black text-white mb-0 ls-wider" style="font-size: 0.8rem;"> Online Agora — @Users.Count </h6> </div> <div class="users-container d-flex flex-wrap gap-2">
+        @if (Users == null || !Users.Any())
+        {
+            <div class="text-muted small italic px-3">Sala vazia...</div>
+        }
+        else
+        {
+            @foreach (var user in Users)
+            {
+                <div class="user-card-pill shadow-sm" title="@user.DisplayName">
+                    <div class="avatar-wrapper">
+                        <img src="@(string.IsNullOrEmpty(user.AvatarUrl) ? "https://cdn.discordapp.com/embed/avatars/0.png" : user.AvatarUrl)"
+                             alt="avatar" width="26" height="26" class="rounded-circle" />
+                        <div class="online-indicator"> </div>
+                    </div>
+                    <span class="user-name"> @user.DisplayName</span>
+                    @if (user.DisplayName == RoomOwner)
+                    {
+                        <span class="owner-badge" title="Dono da Sala">👑</span>
+                    }
+
+                </div>
+            }
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<RoomUserModel> Users
+    {
+        get;
+        set;
+    }
+
+    = new();
+
+    [Parameter]
+    public string? RoomOwner
+    {
+        get;
+        set;
+    }
+
+}

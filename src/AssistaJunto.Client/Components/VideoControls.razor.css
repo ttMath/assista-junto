@@ -1,0 +1,114 @@
+﻿.controls-pill {
+    background: #111214;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 500px;
+    width: fit-content;
+    margin: 20px auto;
+    user-select: none;
+}
+
+.v-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-play-pause {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: #5865F2;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.play-glow {
+    box-shadow: 0 0 15px rgba(88, 101, 242, 0.5);
+}
+
+.pause-glow {
+    box-shadow: 0 0 15px rgba(88, 101, 242, 0.3);
+}
+
+.btn-play-pause:hover {
+    transform: scale(1.08);
+    background: #4752C4;
+    box-shadow: 0 0 25px rgba(88, 101, 242, 0.6);
+}
+
+.btn-icon-secondary {
+    background: transparent;
+    border: none;
+    color: #8a8e94;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+    .btn-icon-secondary:hover {
+        color: #ffffff;
+    }
+
+.volume-slider-container {
+    position: relative;
+    width: 100px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.volume-track {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: #2b2d31;
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.volume-fill {
+    height: 100%;
+    background: #5865F2;
+    border-radius: 2px;
+}
+
+.volume-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    -webkit-appearance: none;
+    cursor: pointer;
+    margin: 0;
+    z-index: 3;
+}
+
+    .volume-input::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        border: none;
+        transition: transform 0.1s;
+    }
+
+    .volume-input:active::-webkit-slider-thumb {
+        transform: scale(1.2);
+    }
+
+.volume-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #5865f2;
+    width: 32px;
+}

@@ -1,0 +1,27 @@
+﻿.bg-surface {
+    background-color: #0a0a0a;
+    transition: background 0.2s;
+}
+
+.room-card:hover .bg-surface {
+    background-color: #121212;
+}
+
+.room-card {
+    transition: transform 0.3s, border-color 0.3s;
+    background-color: #0a0a0a;
+}
+
+    .room-card:hover {
+        transform: translateY(-5px);
+        border-color: #5865F2 !important;
+    }
+
+.badge-custom {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: #b0b0b0;
+}

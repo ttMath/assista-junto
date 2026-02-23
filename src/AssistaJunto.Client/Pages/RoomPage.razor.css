@@ -1,0 +1,148 @@
+﻿:root {
+    --discord-color: #5865F2;
+    --discord-hover: #4752C4;
+    --bg-black: #000000;
+    --bg-surface: #0a0a0a;
+    --bg-card: #121212;
+    --border-subtle: rgba(255, 255, 255, 0.1);
+    --text-main: #ffffff;
+    --text-muted: #b0b0b0;
+}
+
+body {
+    background-color: var(--bg-black);
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.room-container {
+    padding: 20px;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.main-content {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: calc(100vh - 100px);
+}
+
+.player-wrapper {
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.control-bar {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 12px 20px;
+}
+
+.btn-control {
+    background: transparent;
+    border: none;
+    color: var(--text-white);
+    font-size: 1.2rem;
+    padding: 8px 12px;
+    transition: 0.2s;
+    border-radius: 8px;
+}
+
+    .btn-control:hover {
+        background: rgba(255,255,255,0.1);
+        color: var(--discord-color);
+    }
+
+.user-pill {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    padding: 6px 14px;
+    border-radius: 20px;
+    transition: 0.2s;
+}
+
+    .user-pill:hover {
+        border-color: var(--discord-color);
+    }
+
+.side-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+}
+
+.side-card-header {
+    padding: 12px 20px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border-subtle);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.playlist-item {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 12px;
+    transition: 0.2s;
+    color: var(--text-main);
+}
+
+    .playlist-item:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
+    .playlist-item.active {
+        background: rgba(88, 101, 242, 0.15);
+        border-left: 3px solid var(--discord-color);
+    }
+
+.chat-msg {
+    padding: 8px 20px;
+    font-size: 0.95rem;
+    transition: 0.1s;
+}
+
+    .chat-msg:hover {
+        background: rgba(255,255,255,0.02);
+    }
+
+.custom-input {
+    background: #121212;
+    border: 1px solid var(--border-subtle);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+    .custom-input:focus {
+        background: #181818;
+        border-color: var(--discord-color);
+        box-shadow: none;
+        color: white;
+    }
+
+.custom-toast {
+    background: var(--discord-color);
+    color: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}

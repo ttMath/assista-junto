@@ -103,6 +103,16 @@ public class RoomService : IRoomService
         return moved;
     }
 
+    public async Task<bool> JumpToVideoAsync(string hash, int videoIndex)
+    {
+        var room = await _roomRepository.GetByHashAsync(hash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        var jumped = room.JumpToIndex(videoIndex);
+        if (jumped) await _roomRepository.UpdateAsync(room);
+        return jumped;
+    }
+
     public async Task CloseRoomAsync(string hash, Guid userId)
     {
         var room = await _roomRepository.GetByHashAsync(hash)

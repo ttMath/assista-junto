@@ -14,8 +14,9 @@ public class RoomHubService : IAsyncDisposable
     public event Action<PlayerActionModel>? OnPlayerActionReceived;
     public event Action<ChatMessageModel>? OnChatMessageReceived;
     public event Action<PlaylistItemModel>? OnPlaylistUpdated;
-    public event Action<string>? OnUserJoined;
+    public event Action<RoomUserModel>? OnUserJoined;
     public event Action<string>? OnUserLeft;
+    public event Action<List<RoomUserModel>>? OnUserListReceived;
 
     public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
@@ -49,11 +50,14 @@ public class RoomHubService : IAsyncDisposable
         _hubConnection.On<PlaylistItemModel>("PlaylistUpdated", item =>
             OnPlaylistUpdated?.Invoke(item));
 
-        _hubConnection.On<string>("UserJoined", userName =>
-            OnUserJoined?.Invoke(userName));
+        _hubConnection.On<RoomUserModel>("UserJoined", user =>
+            OnUserJoined?.Invoke(user));
 
         _hubConnection.On<string>("UserLeft", userName =>
             OnUserLeft?.Invoke(userName));
+
+        _hubConnection.On<List<RoomUserModel>>("ReceiveUserList", users =>
+            OnUserListReceived?.Invoke(users));
 
         await _hubConnection.StartAsync();
     }
@@ -92,6 +96,12 @@ public class RoomHubService : IAsyncDisposable
     {
         if (_hubConnection is not null)
             await _hubConnection.InvokeAsync("SyncState", roomHash);
+    }
+
+    public async Task JumpToVideoAsync(string roomHash, int videoIndex)
+    {
+        if (_hubConnection is not null)
+            await _hubConnection.InvokeAsync("JumpToVideo", roomHash, videoIndex);
     }
 
     public async ValueTask DisposeAsync()

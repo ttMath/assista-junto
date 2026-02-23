@@ -81,4 +81,12 @@ public class ApiService
         SetAuth();
         await _httpClient.DeleteAsync($"api/rooms/{hash}/playlist/{itemId}");
     }
+
+    public async Task<AddPlaylistByUrlResponseModel?> AddPlaylistByUrlAsync(string hash, string url)
+    {
+        SetAuth();
+        var response = await _httpClient.PostAsJsonAsync($"api/rooms/{hash}/playlist/from-url", new { Url = url });
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<AddPlaylistByUrlResponseModel>();
+    }
 }

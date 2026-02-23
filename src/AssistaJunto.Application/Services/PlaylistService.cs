@@ -1,6 +1,9 @@
 using AssistaJunto.Application.DTOs;
 using AssistaJunto.Application.Interfaces;
 using AssistaJunto.Domain.Interfaces;
+using YoutubeExplode;
+using YoutubeExplode.Common;
+using YoutubeExplode.Playlists;
 
 namespace AssistaJunto.Application.Services;
 
@@ -8,11 +11,13 @@ public class PlaylistService : IPlaylistService
 {
     private readonly IRoomRepository _roomRepository;
     private readonly IUserRepository _userRepository;
+    private readonly YoutubeClient _youtubeClient;
 
     public PlaylistService(IRoomRepository roomRepository, IUserRepository userRepository)
     {
         _roomRepository = roomRepository;
         _userRepository = userRepository;
+        _youtubeClient = new YoutubeClient();
     }
 
     public async Task<PlaylistItemDto> AddToPlaylistAsync(string roomHash, AddToPlaylistRequest request, Guid userId)
@@ -30,6 +35,90 @@ public class PlaylistService : IPlaylistService
             item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
             item.Order, user.DisplayName, item.AddedAt
         );
+    }
+
+    public async Task<AddPlaylistByUrlResponse> AddPlaylistByUrlAsync(string roomHash, string url, Guid userId)
+    {
+        var room = await _roomRepository.GetByHashAsync(roomHash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        var user = await _userRepository.GetByIdAsync(userId)
+            ?? throw new InvalidOperationException("Usuário não encontrado.");
+
+        var playlistId = TryExtractPlaylistId(url);
+        var addedItems = new List<PlaylistItemDto>();
+
+        if (playlistId is not null)
+        {
+            var videos = await _youtubeClient.Playlists.GetVideosAsync(playlistId);
+
+            foreach (var video in videos)
+            {
+                var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
+                    ?? $"https://img.youtube.com/vi/{video.Id}/mqdefault.jpg";
+
+                var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, userId);
+
+                addedItems.Add(new PlaylistItemDto(
+                    item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
+                    item.Order, user.DisplayName, item.AddedAt
+                ));
+            }
+        }
+        else
+        {
+            var videoId = TryExtractVideoId(url);
+            if (string.IsNullOrWhiteSpace(videoId))
+                throw new InvalidOperationException("URL do YouTube inválida.");
+
+            var video = await _youtubeClient.Videos.GetAsync(videoId);
+            var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
+                ?? $"https://img.youtube.com/vi/{videoId}/mqdefault.jpg";
+
+            var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, userId);
+
+            addedItems.Add(new PlaylistItemDto(
+                item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
+                item.Order, user.DisplayName, item.AddedAt
+            ));
+        }
+
+        await _roomRepository.UpdateAsync(room);
+
+        return new AddPlaylistByUrlResponse(addedItems, addedItems.Count);
+    }
+
+    private static string? TryExtractPlaylistId(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url) || !url.Contains("list=")) return null;
+
+        var idx = url.IndexOf("list=") + 5;
+        var end = url.IndexOf('&', idx);
+        return end > 0 ? url[idx..end] : url[idx..];
+    }
+
+    private static string? TryExtractVideoId(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+
+        if (url.Contains("v="))
+        {
+            var idx = url.IndexOf("v=") + 2;
+            var end = url.IndexOf('&', idx);
+            return end > 0 ? url[idx..end] : url[idx..];
+        }
+
+        if (url.Contains("youtu.be/"))
+        {
+            var idx = url.IndexOf("youtu.be/") + 9;
+            var end = url.IndexOf('?', idx);
+            return end > 0 ? url[idx..end] : url[idx..];
+        }
+
+        if (url.Length == 11 && !url.Contains('/'))
+            return url;
+
+        return null;
     }
 
     public async Task RemoveFromPlaylistAsync(string roomHash, Guid itemId)

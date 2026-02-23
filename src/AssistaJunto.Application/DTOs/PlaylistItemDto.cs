@@ -11,3 +11,7 @@ public record PlaylistItemDto(
 );
 
 public record AddToPlaylistRequest(string VideoId, string Title, string ThumbnailUrl);
+
+public record AddPlaylistByUrlRequest(string Url);
+
+public record AddPlaylistByUrlResponse(List<PlaylistItemDto> Items, int TotalAdded);

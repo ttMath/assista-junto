@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using AssistaJunto.Application.DTOs;
 using AssistaJunto.Application.Interfaces;
@@ -13,12 +14,17 @@ public class RoomHub : Hub
     private readonly IRoomService _roomService;
     private readonly IChatService _chatService;
     private readonly IPlaylistService _playlistService;
+    private readonly IAuthService _authService;
 
-    public RoomHub(IRoomService roomService, IChatService chatService, IPlaylistService playlistService)
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, RoomUserInfo>> _roomUsers = new();
+    private static readonly ConcurrentDictionary<string, string> _connectionRooms = new();
+
+    public RoomHub(IRoomService roomService, IChatService chatService, IPlaylistService playlistService, IAuthService authService)
     {
         _roomService = roomService;
         _chatService = chatService;
         _playlistService = playlistService;
+        _authService = authService;
     }
 
     public async Task JoinRoom(string roomHash)
@@ -29,16 +35,64 @@ public class RoomHub : Hub
         if (state is not null)
             await Clients.Caller.SendAsync("ReceiveRoomState", state);
 
-        var userName = Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Anônimo";
-        await Clients.OthersInGroup(roomHash).SendAsync("UserJoined", userName);
+        var userId = GetUserId();
+        var user = await _authService.GetCurrentUserAsync(userId);
+        var userInfo = new RoomUserInfo(
+            user?.DisplayName ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Anônimo",
+            user?.AvatarUrl ?? ""
+        );
+
+        _connectionRooms[Context.ConnectionId] = roomHash;
+
+        var users = _roomUsers.GetOrAdd(roomHash, _ => new ConcurrentDictionary<string, RoomUserInfo>());
+        users[Context.ConnectionId] = userInfo;
+
+        var userList = users.Values.ToList();
+        await Clients.Group(roomHash).SendAsync("ReceiveUserList", userList);
+        await Clients.OthersInGroup(roomHash).SendAsync("UserJoined", userInfo);
     }
 
     public async Task LeaveRoom(string roomHash)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomHash);
 
-        var userName = Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Anônimo";
+        _connectionRooms.TryRemove(Context.ConnectionId, out _);
+
+        RoomUserInfo? userInfo = null;
+        if (_roomUsers.TryGetValue(roomHash, out var users))
+        {
+            users.TryRemove(Context.ConnectionId, out userInfo);
+            if (users.IsEmpty)
+                _roomUsers.TryRemove(roomHash, out _);
+        }
+
+        var userName = userInfo?.DisplayName ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Anônimo";
         await Clients.OthersInGroup(roomHash).SendAsync("UserLeft", userName);
+
+        var userList = users?.Values.ToList() ?? [];
+        await Clients.Group(roomHash).SendAsync("ReceiveUserList", userList);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        if (_connectionRooms.TryRemove(Context.ConnectionId, out var roomHash))
+        {
+            RoomUserInfo? userInfo = null;
+            if (_roomUsers.TryGetValue(roomHash, out var users))
+            {
+                users.TryRemove(Context.ConnectionId, out userInfo);
+                if (users.IsEmpty)
+                    _roomUsers.TryRemove(roomHash, out _);
+            }
+
+            var userName = userInfo?.DisplayName ?? "Anônimo";
+            await Clients.OthersInGroup(roomHash).SendAsync("UserLeft", userName);
+
+            var userList = users?.Values.ToList() ?? [];
+            await Clients.Group(roomHash).SendAsync("ReceiveUserList", userList);
+        }
+
+        await base.OnDisconnectedAsync(exception);
     }
 
     public async Task SendPlayerAction(string roomHash, PlayerActionDto action)
@@ -104,6 +158,21 @@ public class RoomHub : Hub
         var state = await _roomService.GetRoomStateAsync(roomHash);
         if (state is not null)
             await Clients.Caller.SendAsync("ReceiveRoomState", state);
+    }
+
+    public async Task JumpToVideo(string roomHash, int videoIndex)
+    {
+        try
+        {
+            await _roomService.JumpToVideoAsync(roomHash, videoIndex);
+            var state = await _roomService.GetRoomStateAsync(roomHash);
+            if (state is not null)
+                await Clients.Group(roomHash).SendAsync("ReceiveRoomState", state);
+        }
+        catch (Exception ex)
+        {
+            throw new HubException($"Falha ao pular para o vídeo: {ex.Message}");
+        }
     }
 
     private Guid GetUserId()

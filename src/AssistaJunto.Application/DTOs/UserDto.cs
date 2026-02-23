@@ -10,3 +10,5 @@ public record UserDto(
 );
 
 public record UpdateNicknameRequest(string? Nickname);
+
+public record RoomUserInfo(string DisplayName, string AvatarUrl);

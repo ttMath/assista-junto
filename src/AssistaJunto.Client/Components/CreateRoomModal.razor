@@ -1,0 +1,50 @@
+﻿<div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.92); backdrop-filter: blur(8px);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-black border border-secondary p-2 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h4 class="modal-title fw-bold text-white">Nova Sala</h4>
+                <button type="button" class="btn-close btn-close-white" @onclick="OnClose"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                @if (Model is not null)
+                {
+                    <div class="mb-4">
+                        <label class="form-label small text-white fw-bold text-uppercase">Nome da Sala</label>
+                        <input type="text"
+                               class="form-control bg-dark border-secondary text-white py-2"
+                               @bind="Model.Name"
+                               @bind:event="oninput"
+                               placeholder="Ex: Noite de Cinema"
+                               autofocus />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-white fw-bold text-uppercase">Senha (Opcional)</label>
+                        <input type="password"
+                               class="form-control bg-dark border-secondary text-white py-2"
+                               @bind="Model.Password"
+                               @bind:event="oninput"
+                               placeholder="••••••••" />
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer border-0 pt-0 gap-3">
+                <button class="btn text-white fw-bold text-decoration-none" @onclick="OnClose">Cancelar</button>
+                <button class="btn btn-success px-4 fw-bold shadow-sm col"
+                        style="background-color: #1b6ec2"
+                        @onclick="OnConfirm"
+                        disabled="@(string.IsNullOrWhiteSpace(Model?.Name))">
+                    CRIAR SALA
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public CreateRoomModel? Model { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}

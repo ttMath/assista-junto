@@ -1,0 +1,8 @@
+﻿.border-dashed {
+    border-style: dashed !important;
+    border-width: 2px !important;
+}
+
+.empty-state-container {
+    background: linear-gradient(145deg, #000000, #080808);
+}

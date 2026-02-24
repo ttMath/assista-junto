@@ -14,6 +14,7 @@ public class RoomModel
     public bool IsPlaying { get; set; }
     public List<PlaylistItemModel> Playlist { get; set; } = [];
     public DateTime CreatedAt { get; set; }
+    public int UsersCount { get; set; }
 }
 
 public class CreateRoomModel

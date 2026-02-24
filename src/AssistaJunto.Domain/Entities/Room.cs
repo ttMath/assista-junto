@@ -14,6 +14,7 @@ public class Room
     public int CurrentVideoIndex { get; private set; }
     public double CurrentTime { get; private set; }
     public bool IsPlaying { get; private set; }
+    public int UsersCount {  get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     private List<PlaylistItem> _playlist = [];

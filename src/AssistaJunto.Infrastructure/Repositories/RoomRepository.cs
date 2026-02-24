@@ -26,6 +26,7 @@ public class RoomRepository : IRoomRepository
     public async Task<List<Room>> GetActiveRoomsAsync() =>
         await _context.Rooms
             .Include(r => r.Owner)
+            .Include(r => r.Playlist)
             .Where(r => r.IsActive)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();

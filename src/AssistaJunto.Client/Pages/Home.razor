@@ -79,8 +79,9 @@ else
                               VideoCount="@room.Playlist.Count"
                               HasPassword="@room.HasPassword"
                               OnDelete="() => ConfirmDeleteRoom(room.Hash)"
-                              OnJoin="() => EnterRoom(room)" 
-                              Hash="@room.Hash" />
+                              OnJoin="() => EnterRoom(room)"
+                              Hash="@room.Hash" 
+                              UserCount="@room.UsersCount"/>
                 }
             </div>
         }

@@ -28,7 +28,7 @@
 
             <div class="d-flex gap-2 fw-bold">
                 <span class="badge-custom">🎬 @VideoCount vídeos</span>
-                <span class="badge-custom">👥 Ativa</span>
+                <span class="badge-custom">👥 @GetUserCountText()</span>
             </div>
         </div>
         <div class="p-4 pt-0 bg-surface">
@@ -52,5 +52,10 @@
     private async Task HandleDelete()
     {
         await OnDelete.InvokeAsync();
+    }
+
+    private string GetUserCountText()
+    {
+        return UserCount == 0 ? "0 usuários" : $"{UserCount} usuários";
     }
 }

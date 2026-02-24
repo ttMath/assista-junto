@@ -7,6 +7,7 @@ public record RoomDto(
     bool HasPassword,
     string OwnerDisplayName,
     bool IsActive,
+    int UsersCount,
     int CurrentVideoIndex,
     double CurrentTime,
     bool IsPlaying,

@@ -15,4 +15,6 @@ public interface IRoomService
     Task<bool> JumpToVideoAsync(string hash, int videoIndex);
     Task CloseRoomAsync(string hash, Guid userId);
     Task DeleteRoomAsync(string hash, Guid userId);
+    Task IncrementUserCountAsync(string hash);
+    Task DecrementUserCountAsync(string hash);
 }

@@ -131,6 +131,7 @@ public class RoomService : IRoomService
             room.Id, room.Hash, room.Name,
             room.PasswordHash is not null,
             ownerDisplayName, room.IsActive,
+            room.UsersCount,
             room.CurrentVideoIndex, room.CurrentTime, room.IsPlaying,
             MapPlaylist(room), room.CreatedAt, room.OwnerId
         );
@@ -151,5 +152,24 @@ public class RoomService : IRoomService
         if (room.OwnerId != userId)
             throw new UnauthorizedAccessException("Apenas o dono da sala tem permissão para a eliminar.");
         await _roomRepository.DeleteAsync(room);
+    }
+
+    // New methods to increment/decrement user count and persist it
+    public async Task IncrementUserCountAsync(string hash)
+    {
+        var room = await _roomRepository.GetByHashAsync(hash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        room.IncrementUsersCount();
+        await _roomRepository.UpdateAsync(room);
+    }
+
+    public async Task DecrementUserCountAsync(string hash)
+    {
+        var room = await _roomRepository.GetByHashAsync(hash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        room.DecrementUsersCount();
+        await _roomRepository.UpdateAsync(room);
     }
 }

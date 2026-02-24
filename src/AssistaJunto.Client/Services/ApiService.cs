@@ -82,6 +82,12 @@ public class ApiService
         await _httpClient.DeleteAsync($"api/rooms/{hash}/playlist/{itemId}");
     }
 
+    public async Task ClearPlaylistAsync(string hash)
+    {
+        SetAuth();
+        await _httpClient.DeleteAsync($"api/rooms/{hash}/playlist");
+    }
+
     public async Task<AddPlaylistByUrlResponseModel?> AddPlaylistByUrlAsync(string hash, string url)
     {
         SetAuth();

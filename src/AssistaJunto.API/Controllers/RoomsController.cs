@@ -92,6 +92,14 @@ public class RoomsController : ControllerBase
         return Ok(playlist);
     }
 
+    [HttpDelete("{hash}/playlist")]
+    public async Task<IActionResult> ClearPlaylist(string hash)
+    {
+        await _playlistService.ClearPlaylistAsync(hash);
+        await _hubContext.Clients.Group(hash).SendAsync("PlaylistCleared");
+        return NoContent();
+    }
+
     [HttpDelete("{hash}")]
     public async Task<IActionResult> CloseRoom(string hash)
     {

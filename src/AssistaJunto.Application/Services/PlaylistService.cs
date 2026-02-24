@@ -54,6 +54,9 @@ public class PlaylistService : IPlaylistService
 
             foreach (var video in videos)
             {
+                if (room.HasVideo(video.Id))
+                    continue;
+
                 var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
                     ?? $"https://img.youtube.com/vi/{video.Id}/mqdefault.jpg";
 
@@ -70,6 +73,9 @@ public class PlaylistService : IPlaylistService
             var videoId = TryExtractVideoId(url);
             if (string.IsNullOrWhiteSpace(videoId))
                 throw new InvalidOperationException("URL do YouTube inválida.");
+
+            if (room.HasVideo(videoId))
+                throw new InvalidOperationException("Este vídeo já está na playlist.");
 
             var video = await _youtubeClient.Videos.GetAsync(videoId);
             var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
@@ -127,6 +133,15 @@ public class PlaylistService : IPlaylistService
             ?? throw new InvalidOperationException("Sala não encontrada.");
 
         room.RemoveFromPlaylist(itemId);
+        await _roomRepository.UpdateAsync(room);
+    }
+
+    public async Task ClearPlaylistAsync(string roomHash)
+    {
+        var room = await _roomRepository.GetByHashAsync(roomHash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        room.ClearPlaylist();
         await _roomRepository.UpdateAsync(room);
     }
 

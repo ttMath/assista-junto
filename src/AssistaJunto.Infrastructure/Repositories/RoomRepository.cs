@@ -14,13 +14,13 @@ public class RoomRepository : IRoomRepository
     public async Task<Room?> GetByIdAsync(Guid id) =>
         await _context.Rooms
             .Include(r => r.Owner)
-            .Include(r => r.Playlist).ThenInclude(p => p.AddedBy)
+            .Include(r => r.Playlist.OrderBy(p => p.Order)).ThenInclude(p => p.AddedBy)
             .FirstOrDefaultAsync(r => r.Id == id);
 
     public async Task<Room?> GetByHashAsync(string hash) =>
         await _context.Rooms
             .Include(r => r.Owner)
-            .Include(r => r.Playlist).ThenInclude(p => p.AddedBy)
+            .Include(r => r.Playlist.OrderBy(p => p.Order)).ThenInclude(p => p.AddedBy)
             .FirstOrDefaultAsync(r => r.Hash == hash);
 
     public async Task<List<Room>> GetActiveRoomsAsync() =>

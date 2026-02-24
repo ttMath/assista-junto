@@ -59,10 +59,18 @@ public class Room
 
     public PlaylistItem AddToPlaylist(string videoId, string title, string thumbnailUrl, Guid addedByUserId)
     {
+        if (_playlist.Any(p => p.VideoId == videoId))
+            throw new InvalidOperationException("Este vídeo já está na playlist.");
+
         var order = _playlist.Count;
         var item = new PlaylistItem(Id, videoId, title, thumbnailUrl, order, addedByUserId);
         _playlist.Add(item);
         return item;
+    }
+
+    public bool HasVideo(string videoId)
+    {
+        return _playlist.Any(p => p.VideoId == videoId);
     }
 
     public void RemoveFromPlaylist(Guid itemId)
@@ -114,14 +122,20 @@ public class Room
 
     public PlaylistItem? GetCurrentVideo()
     {
-        if (CurrentVideoIndex >= 0 && CurrentVideoIndex < _playlist.Count)
-            return _playlist[CurrentVideoIndex];
-        return null;
+        return _playlist.OrderBy(p => p.Order).ElementAtOrDefault(CurrentVideoIndex);
     }
 
     public void Close()
     {
         IsActive = false;
+        IsPlaying = false;
+    }
+
+    public void ClearPlaylist()
+    {
+        _playlist.Clear();
+        CurrentVideoIndex = 0;
+        CurrentTime = 0;
         IsPlaying = false;
     }
 

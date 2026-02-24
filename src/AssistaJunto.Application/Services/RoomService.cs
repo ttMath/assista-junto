@@ -154,7 +154,6 @@ public class RoomService : IRoomService
         await _roomRepository.DeleteAsync(room);
     }
 
-    // New methods to increment/decrement user count and persist it
     public async Task IncrementUserCountAsync(string hash)
     {
         var room = await _roomRepository.GetByHashAsync(hash)

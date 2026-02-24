@@ -75,9 +75,12 @@ else
                 {
                     <Roomcard RoomName="@room.Name"
                               OwnerName="@room.OwnerDisplayName"
+                              IsUserOwner="@(room.OwnerId == AuthState.CurrentUser?.Id)"
                               VideoCount="@room.Playlist.Count"
                               HasPassword="@room.HasPassword"
-                              OnJoin="() => EnterRoom(room)" />
+                              OnDelete="() => ConfirmDeleteRoom(room.Hash)"
+                              OnJoin="() => EnterRoom(room)" 
+                              Hash="@room.Hash" />
                 }
             </div>
         }
@@ -120,7 +123,7 @@ else
     private string _apiBaseUrl = "";
     private bool _initialized;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         _apiBaseUrl = Config["ApiBaseUrl"] ?? "https://localhost:7001";
     }
@@ -130,7 +133,7 @@ else
         if (firstRender)
         {
             await AuthState.InitializeAsync();
-            if (AuthState.IsAuthenticated)
+            if (AuthState.IsAuthenticated && AuthState.CurrentUser is null)
             {
                 _rooms = await Api.GetActiveRoomsAsync();
             }
@@ -175,6 +178,15 @@ else
         else { Nav.NavigateTo($"/sala/{room.Hash}"); }
     }
 
+    private async Task ConfirmDeleteRoom(string hash)
+    {
+        var success = await Api.DeleteRoomAsync(hash);
+        if (success)
+        {
+            _rooms?.RemoveAll(r => r.Hash == hash);
+            StateHasChanged();
+        }
+    }
     private async Task SubmitPassword()
     {
         if (_pendingRoom is null) return;

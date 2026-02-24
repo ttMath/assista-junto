@@ -13,3 +13,8 @@
     flex: 1;
     padding: 0;
 }
+
+.home-btn {
+    background: transparent;
+    border: none;
+}

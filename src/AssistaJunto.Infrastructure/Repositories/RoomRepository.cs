@@ -43,4 +43,10 @@ public class RoomRepository : IRoomRepository
 
         await _context.SaveChangesAsync();
     }
+
+    public async Task DeleteAsync(Room room)
+    {
+        _context.Rooms.Remove(room);
+        await _context.SaveChangesAsync();
+    }
 }

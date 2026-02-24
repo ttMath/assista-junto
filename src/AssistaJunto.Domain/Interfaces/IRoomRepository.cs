@@ -9,4 +9,5 @@ public interface IRoomRepository
     Task<List<Room>> GetActiveRoomsAsync();
     Task AddAsync(Room room);
     Task UpdateAsync(Room room);
+    Task DeleteAsync(Room room);
 }

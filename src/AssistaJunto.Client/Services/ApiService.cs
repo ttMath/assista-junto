@@ -1,6 +1,7 @@
+using AssistaJunto.Client.Models;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using AssistaJunto.Client.Models;
+using static System.Net.WebRequestMethods;
 
 namespace AssistaJunto.Client.Services;
 
@@ -94,5 +95,10 @@ public class ApiService
         var response = await _httpClient.PostAsJsonAsync($"api/rooms/{hash}/playlist/from-url", new { Url = url });
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<AddPlaylistByUrlResponseModel>();
+    }
+    public async Task<bool> DeleteRoomAsync(string hash)
+    {
+        var response = await _httpClient.DeleteAsync($"api/rooms/{hash}");
+        return response.IsSuccessStatusCode;
     }
 }

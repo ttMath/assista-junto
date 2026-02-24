@@ -132,7 +132,7 @@ public class RoomService : IRoomService
             room.PasswordHash is not null,
             ownerDisplayName, room.IsActive,
             room.CurrentVideoIndex, room.CurrentTime, room.IsPlaying,
-            MapPlaylist(room), room.CreatedAt
+            MapPlaylist(room), room.CreatedAt, room.OwnerId
         );
     }
 
@@ -142,5 +142,14 @@ public class RoomService : IRoomService
             p.Id, p.VideoId, p.Title, p.ThumbnailUrl, p.Order,
             p.AddedBy?.DisplayName ?? "Desconhecido", p.AddedAt
         )).ToList();
+    }
+
+    public async Task DeleteRoomAsync(string hash, Guid userId)
+    {
+        var room = await _roomRepository.GetByHashAsync(hash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+        if (room.OwnerId != userId)
+            throw new UnauthorizedAccessException("Apenas o dono da sala tem permissão para a eliminar.");
+        await _roomRepository.DeleteAsync(room);
     }
 }

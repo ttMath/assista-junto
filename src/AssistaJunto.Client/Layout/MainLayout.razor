@@ -6,7 +6,7 @@
 
 <div class="page">
     <header class="top-bar d-flex align-items-center justify-content-between px-4 py-2 bg-dark text-white">
-        <a href="/" class="text-decoration-none text-white fw-bold fs-4">🎬 Assista Junto — JAÇA CITY</a>
+        <button @onclick="@(() => Nav.NavigateTo("", true))" class="text-decoration-none text-white fw-bold fs-4 home-btn">🎬 Assista Junto — JAÇA CITY</button>
         <div class="d-flex align-items-center gap-3">
             @if (AuthState.IsAuthenticated && AuthState.CurrentUser is not null)
             {

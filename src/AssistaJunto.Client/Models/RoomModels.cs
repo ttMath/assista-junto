@@ -3,6 +3,7 @@ namespace AssistaJunto.Client.Models;
 public class RoomModel
 {
     public Guid Id { get; set; }
+    public Guid OwnerId { get; set; }
     public string Hash { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public bool HasPassword { get; set; }

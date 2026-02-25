@@ -14,6 +14,7 @@ public class Room
     public int CurrentVideoIndex { get; private set; }
     public double CurrentTime { get; private set; }
     public bool IsPlaying { get; private set; }
+    public int UsersCount {  get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     private List<PlaylistItem> _playlist = [];
@@ -38,6 +39,7 @@ public class Room
         CurrentTime = 0;
         IsPlaying = false;
         CreatedAt = DateTime.UtcNow;
+        UsersCount = 0;
 
         if (!string.IsNullOrWhiteSpace(password))
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
@@ -137,6 +139,17 @@ public class Room
         CurrentVideoIndex = 0;
         CurrentTime = 0;
         IsPlaying = false;
+    }
+
+    public void IncrementUsersCount()
+    {
+        UsersCount++;
+    }
+
+    public void DecrementUsersCount()
+    {
+        if (UsersCount > 0)
+            UsersCount--;
     }
 
     private static string GenerateHash()

@@ -7,11 +7,13 @@ public record RoomDto(
     bool HasPassword,
     string OwnerDisplayName,
     bool IsActive,
+    int UsersCount,
     int CurrentVideoIndex,
     double CurrentTime,
     bool IsPlaying,
     List<PlaylistItemDto> Playlist,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    Guid OwnerId
 );
 
 public record CreateRoomRequest(string Name, string? Password);

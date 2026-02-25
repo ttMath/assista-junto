@@ -26,6 +26,7 @@ public class RoomRepository : IRoomRepository
     public async Task<List<Room>> GetActiveRoomsAsync() =>
         await _context.Rooms
             .Include(r => r.Owner)
+            .Include(r => r.Playlist)
             .Where(r => r.IsActive)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
@@ -41,6 +42,12 @@ public class RoomRepository : IRoomRepository
         if (_context.Entry(room).State == EntityState.Detached)
             _context.Rooms.Update(room);
 
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(Room room)
+    {
+        _context.Rooms.Remove(room);
         await _context.SaveChangesAsync();
     }
 }

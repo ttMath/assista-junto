@@ -18,6 +18,7 @@ public class RoomHub : Hub
 
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, RoomUserInfo>> _roomUsers = new();
     private static readonly ConcurrentDictionary<string, string> _connectionRooms = new();
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, int>> _roomUserCounts = new();
 
     public RoomHub(IRoomService roomService, IChatService chatService, IPlaylistService playlistService, IAuthService authService)
     {
@@ -47,6 +48,20 @@ public class RoomHub : Hub
         var users = _roomUsers.GetOrAdd(roomHash, _ => new ConcurrentDictionary<string, RoomUserInfo>());
         users[Context.ConnectionId] = userInfo;
 
+        var userCounts = _roomUserCounts.GetOrAdd(roomHash, _ => new ConcurrentDictionary<string, int>());
+        var userIdStr = userId.ToString();
+        var newConnCount = userCounts.AddOrUpdate(userIdStr, 1, (_, old) => old + 1);
+        if (newConnCount == 1)
+        {
+            try
+            {
+                await _roomService.IncrementUserCountAsync(roomHash);
+            }
+            catch
+            {
+            }
+        }
+
         var userList = users.Values.ToList();
         await Clients.Group(roomHash).SendAsync("ReceiveUserList", userList);
         await Clients.OthersInGroup(roomHash).SendAsync("UserJoined", userInfo);
@@ -66,6 +81,33 @@ public class RoomHub : Hub
                 _roomUsers.TryRemove(roomHash, out _);
         }
 
+        try
+        {
+            var userId = GetUserId();
+            var userIdStr = userId.ToString();
+            if (_roomUserCounts.TryGetValue(roomHash, out var userCounts))
+            {
+                if (userCounts.TryGetValue(userIdStr, out var connCount))
+                {
+                    if (connCount <= 1)
+                    {
+                        userCounts.TryRemove(userIdStr, out _);
+                        try { await _roomService.DecrementUserCountAsync(roomHash); } catch { }
+                    }
+                    else
+                    {
+                        userCounts[userIdStr] = connCount - 1;
+                    }
+
+                    if (userCounts.IsEmpty)
+                        _roomUserCounts.TryRemove(roomHash, out _);
+                }
+            }
+        }
+        catch
+        {
+        }
+
         var userName = userInfo?.DisplayName ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Anônimo";
         await Clients.OthersInGroup(roomHash).SendAsync("UserLeft", userName);
 
@@ -83,6 +125,33 @@ public class RoomHub : Hub
                 users.TryRemove(Context.ConnectionId, out userInfo);
                 if (users.IsEmpty)
                     _roomUsers.TryRemove(roomHash, out _);
+            }
+
+            try
+            {
+                var userId = GetUserId();
+                var userIdStr = userId.ToString();
+                if (_roomUserCounts.TryGetValue(roomHash, out var userCounts))
+                {
+                    if (userCounts.TryGetValue(userIdStr, out var connCount))
+                    {
+                        if (connCount <= 1)
+                        {
+                            userCounts.TryRemove(userIdStr, out _);
+                            try { await _roomService.DecrementUserCountAsync(roomHash); } catch { }
+                        }
+                        else
+                        {
+                            userCounts[userIdStr] = connCount - 1;
+                        }
+
+                        if (userCounts.IsEmpty)
+                            _roomUserCounts.TryRemove(roomHash, out _);
+                    }
+                }
+            }
+            catch
+            {
             }
 
             var userName = userInfo?.DisplayName ?? "Anônimo";

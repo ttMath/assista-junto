@@ -42,6 +42,32 @@ body {
     animation-delay: -5s;
 }
 
+.btn-delete-action {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+        color: #ff4d4d;
+        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-delete-action:hover {
+        background: #dc3545;
+        color: white;
+        border-color: #dc3545;
+        transform: scale(1.1);
+    }
+
+
 @keyframes float-blob {
     from {
         transform: translate(0, 0) scale(1);

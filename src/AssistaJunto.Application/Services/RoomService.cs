@@ -131,8 +131,9 @@ public class RoomService : IRoomService
             room.Id, room.Hash, room.Name,
             room.PasswordHash is not null,
             ownerDisplayName, room.IsActive,
+            room.UsersCount,
             room.CurrentVideoIndex, room.CurrentTime, room.IsPlaying,
-            MapPlaylist(room), room.CreatedAt
+            MapPlaylist(room), room.CreatedAt, room.OwnerId
         );
     }
 
@@ -142,5 +143,32 @@ public class RoomService : IRoomService
             p.Id, p.VideoId, p.Title, p.ThumbnailUrl, p.Order,
             p.AddedBy?.DisplayName ?? "Desconhecido", p.AddedAt
         )).ToList();
+    }
+
+    public async Task DeleteRoomAsync(string hash, Guid userId)
+    {
+        var room = await _roomRepository.GetByHashAsync(hash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+        if (room.OwnerId != userId)
+            throw new UnauthorizedAccessException("Apenas o dono da sala tem permissão para a eliminar.");
+        await _roomRepository.DeleteAsync(room);
+    }
+
+    public async Task IncrementUserCountAsync(string hash)
+    {
+        var room = await _roomRepository.GetByHashAsync(hash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        room.IncrementUsersCount();
+        await _roomRepository.UpdateAsync(room);
+    }
+
+    public async Task DecrementUserCountAsync(string hash)
+    {
+        var room = await _roomRepository.GetByHashAsync(hash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        room.DecrementUsersCount();
+        await _roomRepository.UpdateAsync(room);
     }
 }

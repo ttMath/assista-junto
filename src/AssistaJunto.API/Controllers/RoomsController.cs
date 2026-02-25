@@ -101,11 +101,26 @@ public class RoomsController : ControllerBase
     }
 
     [HttpDelete("{hash}")]
-    public async Task<IActionResult> CloseRoom(string hash)
+    public async Task<IActionResult> DeleteRoom(string hash)
     {
-        var userId = GetUserId();
-        await _roomService.CloseRoomAsync(hash, userId);
-        return NoContent();
+        try
+        {
+            var userId = GetUserId();
+            await _roomService.DeleteRoomAsync(hash, userId);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Erro ao processar a eliminação." });
+        }
     }
 
     private Guid GetUserId() =>

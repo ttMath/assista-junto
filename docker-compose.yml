@@ -65,6 +65,8 @@ services:
       ASPNETCORE_URLS: http://+:5000
       # Sobrescreve a connection string para usar o hostname interno do Docker
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Discord__ClientId: "${Discord__ClientId}"
+      Discord__ClientSecret: "${Discord__ClientSecret}"
     depends_on:
       postgres:
         condition: service_healthy

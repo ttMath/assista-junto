@@ -1,0 +1,17 @@
+# Segredos - nunca copiar para a imagem
+.env
+**/.env
+**/.env.*
+
+# Artifacts de build locais
+**/bin
+**/obj
+
+# Git
+**/.git
+**/.gitignore
+**/.gitattributes
+
+# Visual Studio
+**/.vs
+**/*.user

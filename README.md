@@ -1,9 +1,9 @@
 <div align="center">
   <img src="https://img.shields.io/badge/.NET-purple?style=for-the-badge">
-  <img src="https://img.shields.io/badge/postgree-gray?style=for-the-badge">
+  <img src="https://img.shields.io/badge/postgreSQL-blue?style=for-the-badge">
   <img src="https://img.shields.io/badge/bootstrap-magenta?style=for-the-badge">
   <img src="https://img.shields.io/badge/blazor-darkgreen?style=for-the-badge">
-  <img src="https://img.shields.io/badge/entity framework-gray?style=for-the-badge">
+  <img src="https://img.shields.io/badge/entity framework-darkblue?style=for-the-badge">
   <img src="https://img.shields.io/badge/signalr-lightgray?style=for-the-badge">
 <br><br>
 <img src="https://i.imgur.com/72zHxbK.jpg" alt="Project Flow: Discord, YouTube, and Group Synchronization" width="65%">

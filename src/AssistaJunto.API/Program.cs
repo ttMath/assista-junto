@@ -66,7 +66,8 @@ builder.Services.AddSignalR(options =>
         options.EnableDetailedErrors = true;
 });
 
-var allowedOrigins = new List<string> { builder.Configuration["ClientUrl"] ?? "https://localhost:7036" };
+var clientUrl = builder.Configuration["ClientUrl"] ?? throw new InvalidOperationException("ClientUrl not configured. Set it in .env");
+var allowedOrigins = new List<string> { clientUrl };
 var zeroTierClientUrl = builder.Configuration["ZeroTier:ClientUrl"];
 if (!string.IsNullOrWhiteSpace(zeroTierClientUrl))
     allowedOrigins.Add(zeroTierClientUrl);
@@ -91,7 +92,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
+
 app.UseCors("BlazorClient");
 app.UseAuthentication();
 app.UseAuthorization();

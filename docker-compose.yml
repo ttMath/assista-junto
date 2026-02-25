@@ -73,6 +73,7 @@ services:
       - internal
     labels:
       - traefik.enable=true
+      - traefik.docker.network=proxy
       - traefik.http.routers.api.rule=Host(`api.assistajunto.com.br`)
       - traefik.http.routers.api.entrypoints=websecure
       - traefik.http.routers.api.tls.certresolver=letsencrypt

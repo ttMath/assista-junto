@@ -1,64 +1,64 @@
 <div align="center">
-  <img src="https://img.shields.io/badge/.NET-purple?style=for-the-badge">
-  <img src="https://img.shields.io/badge/postgree-gray?style=for-the-badge">
-  <img src="https://img.shields.io/badge/bootstrap-magenta?style=for-the-badge">
-  <img src="https://img.shields.io/badge/blazor-darkgreen?style=for-the-badge">
-  <img src="https://img.shields.io/badge/entity framework-gray?style=for-the-badge">
-  <img src="https://img.shields.io/badge/signalr-lightgray?style=for-the-badge">
+  <img src="https://img.shields.io/badge/.NET-purple?style=for-the-badge">
+  <img src="https://img.shields.io/badge/postgree-gray?style=for-the-badge">
+  <img src="https://img.shields.io/badge/bootstrap-magenta?style=for-the-badge">
+  <img src="https://img.shields.io/badge/blazor-darkgreen?style=for-the-badge">
+  <img src="https://img.shields.io/badge/entity framework-gray?style=for-the-badge">
+  <img src="https://img.shields.io/badge/signalr-lightgray?style=for-the-badge">
 <br><br>
-<img src=".github\assets\project-readme-banner.png" alt="Project Flow: Discord, YouTube, and Group Synchronization" width="65%">
-<br><br>  
+<img src="https://i.imgur.com/72zHxbK.jpg" alt="Project Flow: Discord, YouTube, and Group Synchronization" width="65%">
+<br><br>  
 
 # JAÇA CITY - WATCH PARTY
 
-**An open web platform for watching YouTube videos in groups, integrated with Discord.**
+**Uma plataforma web aberta para assistir vídeos do YouTube em grupo, integrada ao Discord.**
 
 </div>
 
 ---
 
-## 🚀 About the Project
+## 🚀 Sobre o Projeto
 
-This project was born from the motivation to create a **limitless** and completely free "Watch Party" platform. By using Discord authentication, we combine the convenience of one of the most used tools by developers with a seamless entertainment experience.
+Este projeto nasceu da motivação de criar uma plataforma de "Watch Party" **sem limitações** e totalmente gratuita. Ao utilizar a autenticação do Discord, unimos a conveniência de uma das ferramentas mais usadas por desenvolvedores com uma experiência de entretenimento fluida.
 
-The platform allows users to create rooms where video playback is **automatically synchronized** among all participants, ensuring everyone watches the same frame at the same time.
+A plataforma permite que usuários criem salas onde a reprodução do vídeo é **sincronizada automaticamente** entre todos os participantes, permitindo que todos assistam ao mesmo frame ao mesmo tempo.
 
-### Key Features
+### Principais Funcionalidades
 
-* **Discord Login:** Native integration for fast and secure authentication.
-* **Real-Time Synchronization:** Play, Pause, and Seek synchronized for everyone in the room.
-* **Integrated Chat:** Instant messaging within each room for real-time interaction.
-* **Playlist Control:** Add YouTube videos in a simple and organized way.
+* **Login via Discord:** Integração nativa para autenticação rápida.
+* **Sincronização em Tempo Real:** Play, Pause e Seek sincronizados para todos na sala.
+* **Chat Integrado:** Troca de mensagens instantâneas dentro de cada sala.
+* **Controle de Playlist:** Adicione vídeos do YouTube de forma simples e organizada.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Stack Tecnológica
 
-| Layer | Technology | Description |
+| Camada | Tecnologia | Descrição |
 | --- | --- | --- |
-| **Back-end** | **.NET** | Robust and scalable API. |
-| **Real-time** | **SignalR** | WebSocket management for synchronization and chat. |
-| **Front-end** | **Blazor & Bootstrap** | Interactive interface with C# in the browser and responsive design. |
-| **Database** | **PostgreSQL** | Relational data persistence. |
-| **ORM** | **EF Core** | Entity mapping for the database. |
+| **Back-end** | **.NET** | API robusta e escalável. |
+| **Real-time** | **SignalR** | Gerenciamento de WebSockets para sincronização e chat. |
+| **Front-end** | **Blazor & Bootstrap** | Interface interativa com C# no browser e design responsivo. |
+| **Banco de Dados** | **PostgreSQL** | Persistência de dados relacional. |
+| **ORM** | **EF Core** | Mapeamento de entidades para o banco de dados. |
 
 ---
 
-## 👷 Authors
+## 👷 Autores
 
-This project is developed and maintained by:
+Este projeto é desenvolvido e mantido por:
 
-| Name | Role | 
-| --- | --- 
+| Nome | Função | 
+| --- | ---
 | [@MWillian](https://github.com/MWillian) | Full Stack Developer |
-| [@ttMath](https://github.com/ttMath)| Full Stack Developer  |
+| [@ttMath](https://github.com/ttMath)| Full Stack Developer  |
 
 ---
 
-## 🛤️ Roadmap / Future
+## 🛤️ Roadmap / Futuro
 
-* [ ] Cloud infrastructure implementation.
-* [ ] "Host" system (only the room owner controls the player).
-* [ ] History of watched videos per room.
+* [ ] Implementação de infraestrutura em nuvem.
+* [ ] Sistema de "Host" (apenas o dono da sala controla o player).
+* [ ] Histórico de vídeos assistidos por sala.
 
 ---

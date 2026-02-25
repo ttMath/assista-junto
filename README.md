@@ -48,10 +48,10 @@ A plataforma permite que usuários criem salas onde a reprodução do vídeo é 
 
 Este projeto é desenvolvido e mantido por:
 
-| Nome | Função | 
-| --- | ---
+| Nome | Função |
+| --- | --- |
 | [@MWillian](https://github.com/MWillian) | Full Stack Developer |
-| [@ttMath](https://github.com/ttMath)| Full Stack Developer  |
+| [@ttMath](https://github.com/ttMath) | Full Stack Developer |
 
 ---
 

@@ -4,6 +4,7 @@ using AssistaJunto.Domain.Interfaces;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
+using YoutubeExplode.Videos;
 
 namespace AssistaJunto.Application.Services;
 
@@ -45,12 +46,12 @@ public class PlaylistService : IPlaylistService
         var user = await _userRepository.GetByIdAsync(userId)
             ?? throw new InvalidOperationException("Usuário não encontrado.");
 
-        var playlistId = TryExtractPlaylistId(url);
+        var parsedPlaylistId = PlaylistId.TryParse(url);
         var addedItems = new List<PlaylistItemDto>();
 
-        if (playlistId is not null)
+        if (parsedPlaylistId is not null)
         {
-            var videos = await _youtubeClient.Playlists.GetVideosAsync(playlistId);
+            var videos = await _youtubeClient.Playlists.GetVideosAsync(parsedPlaylistId.Value);
 
             foreach (var video in videos)
             {
@@ -70,16 +71,18 @@ public class PlaylistService : IPlaylistService
         }
         else
         {
-            var videoId = TryExtractVideoId(url);
-            if (string.IsNullOrWhiteSpace(videoId))
+            var parsedVideoId = VideoId.TryParse(url);
+            if (parsedVideoId is null)
                 throw new InvalidOperationException("URL do YouTube inválida.");
 
-            if (room.HasVideo(videoId))
+            var videoIdStr = parsedVideoId.Value.Value;
+
+            if (room.HasVideo(videoIdStr))
                 throw new InvalidOperationException("Este vídeo já está na playlist.");
 
-            var video = await _youtubeClient.Videos.GetAsync(videoId);
+            var video = await _youtubeClient.Videos.GetAsync(parsedVideoId.Value);
             var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
-                ?? $"https://img.youtube.com/vi/{videoId}/mqdefault.jpg";
+                ?? $"https://img.youtube.com/vi/{videoIdStr}/mqdefault.jpg";
 
             var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, userId);
 
@@ -92,39 +95,6 @@ public class PlaylistService : IPlaylistService
         await _roomRepository.UpdateAsync(room);
 
         return new AddPlaylistByUrlResponse(addedItems, addedItems.Count);
-    }
-
-    private static string? TryExtractPlaylistId(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url) || !url.Contains("list=")) return null;
-
-        var idx = url.IndexOf("list=") + 5;
-        var end = url.IndexOf('&', idx);
-        return end > 0 ? url[idx..end] : url[idx..];
-    }
-
-    private static string? TryExtractVideoId(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url)) return null;
-
-        if (url.Contains("v="))
-        {
-            var idx = url.IndexOf("v=") + 2;
-            var end = url.IndexOf('&', idx);
-            return end > 0 ? url[idx..end] : url[idx..];
-        }
-
-        if (url.Contains("youtu.be/"))
-        {
-            var idx = url.IndexOf("youtu.be/") + 9;
-            var end = url.IndexOf('?', idx);
-            return end > 0 ? url[idx..end] : url[idx..];
-        }
-
-        if (url.Length == 11 && !url.Contains('/'))
-            return url;
-
-        return null;
     }
 
     public async Task RemoveFromPlaylistAsync(string roomHash, Guid itemId)

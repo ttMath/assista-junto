@@ -43,6 +43,7 @@
                    class="form-control border-secondary-subtle py-2 shadow-none"
                    placeholder="Digite uma mensagem..."
                    @bind="ChatInput"
+                   @bind:event="oninput"
                    @onkeydown="HandleKeyDown" />
             <button class="btn btn-primary px-3 fw-bold" type="button" @onclick="SendMessage">
                 ENVIAR
@@ -58,13 +59,23 @@
     private string ChatInput { get; set; } = "";
     private ElementReference _chatContainer;
     private int _lastMessageCount = 0;
+    private bool _isSending;
 
     private async Task SendMessage()
     {
-        if (!string.IsNullOrWhiteSpace(ChatInput))
+        if (_isSending || string.IsNullOrWhiteSpace(ChatInput))
+            return;
+
+        _isSending = true;
+        try
         {
-            await OnSendMessage.InvokeAsync(ChatInput);
+            var message = ChatInput;
             ChatInput = "";
+            await OnSendMessage.InvokeAsync(message);
+        }
+        finally
+        {
+            _isSending = false;
         }
     }
 

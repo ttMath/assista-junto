@@ -12,8 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if(builder.Environment.IsDevelopment())
-    DotNetEnv.Env.TraversePath().Load();
+DotNetEnv.Env.TraversePath().Load();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

@@ -5,5 +5,6 @@ namespace AssistaJunto.Application.DTOs;
 public record PlayerActionDto(
     PlayerAction Action,
     double? SeekTime,
-    string? VideoId
+    string? VideoId,
+    int? ExpectedIndex
 );

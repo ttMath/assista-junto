@@ -84,7 +84,7 @@ else
                 {
                     <div class="alert alert-info d-flex align-items-center mb-3 py-2" role="alert">
                         <div class="spinner-border spinner-border-sm text-info me-2"></div>
-                        <small>Buscando vídeos da playlist no YouTube, aguarde...</small>
+                        <small>Buscando vídeo(s) no YouTube, aguarde...</small>
                     </div>
                 }
 
@@ -274,13 +274,13 @@ else
 
     private async Task OnNext()
     {
-        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 4 });
+        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 4, ExpectedIndex = _currentVideoIndex });
         await Hub.SyncStateAsync(RoomHash);
     }
 
     private async Task OnPrevious()
     {
-        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 5 });
+        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 5, ExpectedIndex = _currentVideoIndex });
         await Hub.SyncStateAsync(RoomHash);
     }
 
@@ -488,7 +488,7 @@ else
         }
         catch (Exception)
         {
-            // Fallback silencioso — os itens que já foram adicionados aparecem via SignalR
+            ShowToast("Não foi possível adicionar o vídeo. Verifique o link e tente novamente.");
         }
         finally
         {

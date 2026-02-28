@@ -83,20 +83,26 @@ public class RoomService : IRoomService
         await _roomRepository.UpdateAsync(room);
     }
 
-    public async Task<bool> NextVideoAsync(string hash)
+    public async Task<bool> NextVideoAsync(string hash, int? expectedIndex = null)
     {
         var room = await _roomRepository.GetByHashAsync(hash)
             ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        if (expectedIndex.HasValue && room.CurrentVideoIndex != expectedIndex.Value)
+            return false;
 
         var moved = room.MoveToNext();
         if (moved) await _roomRepository.UpdateAsync(room);
         return moved;
     }
 
-    public async Task<bool> PreviousVideoAsync(string hash)
+    public async Task<bool> PreviousVideoAsync(string hash, int? expectedIndex = null)
     {
         var room = await _roomRepository.GetByHashAsync(hash)
             ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        if (expectedIndex.HasValue && room.CurrentVideoIndex != expectedIndex.Value)
+            return false;
 
         var moved = room.MoveToPrevious();
         if (moved) await _roomRepository.UpdateAsync(room);

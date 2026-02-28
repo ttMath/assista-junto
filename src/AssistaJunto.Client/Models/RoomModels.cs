@@ -75,6 +75,7 @@ public class PlayerActionModel
     public int Action { get; set; }
     public double? SeekTime { get; set; }
     public string? VideoId { get; set; }
+    public int? ExpectedIndex { get; set; }
 }
 
 public class RoomUserModel

@@ -65,8 +65,6 @@ services:
       ASPNETCORE_URLS: http://+:5000
       # Sobrescreve a connection string para usar o hostname interno do Docker
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
-      Discord__ClientId: "${Discord__ClientId}"
-      Discord__ClientSecret: "${Discord__ClientSecret}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,6 +98,15 @@ services:
       - traefik.http.routers.client.entrypoints=websecure
       - traefik.http.routers.client.tls.certresolver=letsencrypt
       - traefik.http.services.client.loadbalancer.server.port=3000
+
+      - traefik.http.routers.client-redirect.rule=Host(`assistajunto.com.br`)
+      - traefik.http.routers.client-redirect.entrypoints=websecure
+      - traefik.http.routers.client-redirect.tls.certresolver=letsencrypt
+      - traefik.http.routers.client-redirect.middlewares=force-www
+
+      - traefik.http.middlewares.force-www.redirectregex.regex=^https?://assistajunto.com.br/(.*)
+      - traefik.http.middlewares.force-www.redirectregex.replacement=https://www.assistajunto.com.br/$${1}
+      - traefik.http.middlewares.force-www.redirectregex.permanent=true
 
 volumes:
   postgres_data:

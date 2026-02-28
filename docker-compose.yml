@@ -73,6 +73,7 @@ services:
       - internal
     labels:
       - traefik.enable=true
+      - traefik.docker.network=proxy
       - traefik.http.routers.api.rule=Host(`api.assistajunto.com.br`)
       - traefik.http.routers.api.entrypoints=websecure
       - traefik.http.routers.api.tls.certresolver=letsencrypt
@@ -98,11 +99,21 @@ services:
       - traefik.http.routers.client.tls.certresolver=letsencrypt
       - traefik.http.services.client.loadbalancer.server.port=3000
 
+      - traefik.http.routers.client-redirect.rule=Host(`assistajunto.com.br`)
+      - traefik.http.routers.client-redirect.entrypoints=websecure
+      - traefik.http.routers.client-redirect.tls.certresolver=letsencrypt
+      - traefik.http.routers.client-redirect.middlewares=force-www
+
+      - traefik.http.middlewares.force-www.redirectregex.regex=^https?://assistajunto.com.br/(.*)
+      - traefik.http.middlewares.force-www.redirectregex.replacement=https://www.assistajunto.com.br/$${1}
+      - traefik.http.middlewares.force-www.redirectregex.permanent=true
+
 volumes:
   postgres_data:
   letsencrypt:
 
 networks:
   proxy:
+    name: proxy
   internal:
     internal: true

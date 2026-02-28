@@ -274,13 +274,13 @@ else
 
     private async Task OnNext()
     {
-        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 4 });
+        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 4, ExpectedIndex = _currentVideoIndex });
         await Hub.SyncStateAsync(RoomHash);
     }
 
     private async Task OnPrevious()
     {
-        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 5 });
+        await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 5, ExpectedIndex = _currentVideoIndex });
         await Hub.SyncStateAsync(RoomHash);
     }
 

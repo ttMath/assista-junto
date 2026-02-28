@@ -179,10 +179,10 @@ public class RoomHub : Hub
                 case PlayerAction.SeekTo:
                     break;
                 case PlayerAction.NextVideo:
-                    await _roomService.NextVideoAsync(roomHash);
+                    await _roomService.NextVideoAsync(roomHash, action.ExpectedIndex);
                     break;
                 case PlayerAction.PreviousVideo:
-                    await _roomService.PreviousVideoAsync(roomHash);
+                    await _roomService.PreviousVideoAsync(roomHash, action.ExpectedIndex);
                     break;
             }
 

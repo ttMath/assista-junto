@@ -36,6 +36,15 @@ public class RoomService : IRoomService
         return MapToDto(room);
     }
 
+    public async Task<RoomDto?> GetRoomByNameAsync(string name)
+    {
+        var rooms = await _roomRepository.GetActiveRoomsAsync();
+        var room = rooms.FirstOrDefault(r => string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (room is null) return null;
+
+        return MapToDto(room);
+    }
+
     public async Task<RoomStateDto?> GetRoomStateAsync(string hash)
     {
         var room = await _roomRepository.GetByHashAsync(hash);

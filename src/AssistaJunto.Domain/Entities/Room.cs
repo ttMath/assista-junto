@@ -15,6 +15,7 @@ public class Room
     public bool IsPlaying { get; private set; }
     public int UsersCount {  get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime LastActivityAt { get; private set; }
 
     private List<PlaylistItem> _playlist = [];
     public IReadOnlyCollection<PlaylistItem> Playlist => _playlist.AsReadOnly();
@@ -38,6 +39,7 @@ public class Room
         CurrentTime = 0;
         IsPlaying = false;
         CreatedAt = DateTime.UtcNow;
+        LastActivityAt = DateTime.UtcNow;
         UsersCount = 0;
 
         if (!string.IsNullOrWhiteSpace(password))
@@ -143,12 +145,23 @@ public class Room
     public void IncrementUsersCount()
     {
         UsersCount++;
+        LastActivityAt = DateTime.UtcNow;
     }
 
     public void DecrementUsersCount()
     {
         if (UsersCount > 0)
             UsersCount--;
+        LastActivityAt = DateTime.UtcNow;
+    }
+
+    public bool IsInactiveFor(int minutes)
+    {
+        lock (this) 
+        {
+            var inactiveDuration = DateTime.UtcNow - LastActivityAt;
+            return inactiveDuration.TotalMinutes >= minutes && UsersCount == 0;
+        }
     }
 
     private static string GenerateHash()

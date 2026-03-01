@@ -1,7 +1,5 @@
 using AssistaJunto.Client.Models;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using static System.Net.WebRequestMethods;
 
 namespace AssistaJunto.Client.Services;
 
@@ -16,40 +14,22 @@ public class ApiService
         _authState = authState;
     }
 
-    private void SetAuth()
+    private void SetUsername()
     {
-        if (_authState.Token is not null)
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _authState.Token);
-        else
-            _httpClient.DefaultRequestHeaders.Authorization = null;
-    }
-
-    public async Task<UserModel?> GetCurrentUserAsync()
-    {
-        SetAuth();
-        var response = await _httpClient.GetAsync("api/auth/me");
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<UserModel>();
-    }
-
-    public async Task<UserModel?> UpdateNicknameAsync(string? nickname)
-    {
-        SetAuth();
-        var response = await _httpClient.PutAsJsonAsync("api/auth/nickname", new { Nickname = nickname });
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<UserModel>();
+        _httpClient.DefaultRequestHeaders.Remove("X-Username");
+        if (_authState.Username is not null)
+            _httpClient.DefaultRequestHeaders.Add("X-Username", _authState.Username);
     }
 
     public async Task<List<RoomModel>> GetActiveRoomsAsync()
     {
-        SetAuth();
+        SetUsername();
         return await _httpClient.GetFromJsonAsync<List<RoomModel>>("api/rooms") ?? [];
     }
 
     public async Task<RoomModel?> CreateRoomAsync(CreateRoomModel model)
     {
-        SetAuth();
+        SetUsername();
         var response = await _httpClient.PostAsJsonAsync("api/rooms", model);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<RoomModel>();
@@ -57,13 +37,13 @@ public class ApiService
 
     public async Task<RoomModel?> GetRoomAsync(string hash)
     {
-        SetAuth();
+        SetUsername();
         return await _httpClient.GetFromJsonAsync<RoomModel>($"api/rooms/{hash}");
     }
 
     public async Task<RoomStateModel?> JoinRoomAsync(string hash, string? password)
     {
-        SetAuth();
+        SetUsername();
         var response = await _httpClient.PostAsJsonAsync($"api/rooms/{hash}/join", new JoinRoomModel { Password = password });
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<RoomStateModel>();
@@ -71,7 +51,7 @@ public class ApiService
 
     public async Task<PlaylistItemModel?> AddToPlaylistAsync(string hash, AddToPlaylistModel model)
     {
-        SetAuth();
+        SetUsername();
         var response = await _httpClient.PostAsJsonAsync($"api/rooms/{hash}/playlist", model);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<PlaylistItemModel>();
@@ -79,25 +59,27 @@ public class ApiService
 
     public async Task RemoveFromPlaylistAsync(string hash, Guid itemId)
     {
-        SetAuth();
+        SetUsername();
         await _httpClient.DeleteAsync($"api/rooms/{hash}/playlist/{itemId}");
     }
 
     public async Task ClearPlaylistAsync(string hash)
     {
-        SetAuth();
+        SetUsername();
         await _httpClient.DeleteAsync($"api/rooms/{hash}/playlist");
     }
 
     public async Task<AddPlaylistByUrlResponseModel?> AddPlaylistByUrlAsync(string hash, string url)
     {
-        SetAuth();
+        SetUsername();
         var response = await _httpClient.PostAsJsonAsync($"api/rooms/{hash}/playlist/from-url", new { Url = url });
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<AddPlaylistByUrlResponseModel>();
     }
+
     public async Task<bool> DeleteRoomAsync(string hash)
     {
+        SetUsername();
         var response = await _httpClient.DeleteAsync($"api/rooms/{hash}");
         return response.IsSuccessStatusCode;
     }

@@ -13,7 +13,6 @@ public class ChatMessageRepository : IChatMessageRepository
 
     public async Task<List<ChatMessage>> GetByRoomIdAsync(Guid roomId, int take = 50) =>
         await _context.ChatMessages
-            .Include(m => m.User)
             .Where(m => m.RoomId == roomId)
             .OrderByDescending(m => m.SentAt)
             .Take(take)

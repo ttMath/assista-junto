@@ -3,7 +3,6 @@ namespace AssistaJunto.Client.Models;
 public class RoomModel
 {
     public Guid Id { get; set; }
-    public Guid OwnerId { get; set; }
     public string Hash { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public bool HasPassword { get; set; }
@@ -65,7 +64,6 @@ public class ChatMessageModel
 {
     public Guid Id { get; set; }
     public string UserDisplayName { get; set; } = string.Empty;
-    public string UserAvatarUrl { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public DateTime SentAt { get; set; }
 }
@@ -81,7 +79,6 @@ public class PlayerActionModel
 public class RoomUserModel
 {
     public string DisplayName { get; set; } = string.Empty;
-    public string AvatarUrl { get; set; } = string.Empty;
 }
 
 public class ToastNotification

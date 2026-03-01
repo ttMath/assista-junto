@@ -1,5 +1,3 @@
-using System.Net.Http.Json;
-using AssistaJunto.Client.Models;
 using Microsoft.JSInterop;
 
 namespace AssistaJunto.Client.Services;
@@ -7,14 +5,12 @@ namespace AssistaJunto.Client.Services;
 public class AuthStateService
 {
     private readonly IJSRuntime _js;
-    private string? _token;
-    private UserModel? _currentUser;
+    private string? _username;
 
     public event Action? OnAuthStateChanged;
 
-    public bool IsAuthenticated => _token is not null;
-    public UserModel? CurrentUser => _currentUser;
-    public string? Token => _token;
+    public bool IsAuthenticated => _username is not null;
+    public string? Username => _username;
 
     public AuthStateService(IJSRuntime js)
     {
@@ -23,27 +19,20 @@ public class AuthStateService
 
     public async Task InitializeAsync()
     {
-        _token = await _js.InvokeAsync<string?>("localStorage.getItem", "auth_token");
+        _username = await _js.InvokeAsync<string?>("localStorage.getItem", "user_name");
     }
 
-    public async Task SetTokenAsync(string token)
+    public async Task SetUsernameAsync(string username)
     {
-        _token = token;
-        await _js.InvokeVoidAsync("localStorage.setItem", "auth_token", token);
+        _username = username;
+        await _js.InvokeVoidAsync("localStorage.setItem", "user_name", username);
         OnAuthStateChanged?.Invoke();
     }
 
     public async Task LogoutAsync()
     {
-        _token = null;
-        _currentUser = null;
-        await _js.InvokeVoidAsync("localStorage.removeItem", "auth_token");
-        OnAuthStateChanged?.Invoke();
-    }
-
-    public void SetCurrentUser(UserModel user)
-    {
-        _currentUser = user;
+        _username = null;
+        await _js.InvokeVoidAsync("localStorage.removeItem", "user_name");
         OnAuthStateChanged?.Invoke();
     }
 }

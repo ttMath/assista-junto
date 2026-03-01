@@ -5,7 +5,7 @@ namespace AssistaJunto.Domain.Interfaces;
 public interface IUserRepository
 {
     Task<User?> GetByIdAsync(Guid id);
-    Task<User?> GetByDiscordIdAsync(string discordId);
+    Task<User?> GetByUsernameAsync(string username);
     Task AddAsync(User user);
     Task UpdateAsync(User user);
 }

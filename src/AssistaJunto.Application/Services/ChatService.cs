@@ -9,31 +9,25 @@ public class ChatService : IChatService
 {
     private readonly IChatMessageRepository _chatMessageRepository;
     private readonly IRoomRepository _roomRepository;
-    private readonly IUserRepository _userRepository;
 
     public ChatService(
         IChatMessageRepository chatMessageRepository,
-        IRoomRepository roomRepository,
-        IUserRepository userRepository)
+        IRoomRepository roomRepository)
     {
         _chatMessageRepository = chatMessageRepository;
         _roomRepository = roomRepository;
-        _userRepository = userRepository;
     }
 
-    public async Task<ChatMessageDto> SendMessageAsync(string roomHash, Guid userId, string content)
+    public async Task<ChatMessageDto> SendMessageAsync(string roomHash, string username, string content)
     {
         var room = await _roomRepository.GetByHashAsync(roomHash)
             ?? throw new InvalidOperationException("Sala não encontrada.");
 
-        var user = await _userRepository.GetByIdAsync(userId)
-            ?? throw new InvalidOperationException("Usuário não encontrado.");
-
-        var message = new ChatMessage(room.Id, userId, content);
+        var message = new ChatMessage(room.Id, username, content);
         await _chatMessageRepository.AddAsync(message);
 
         return new ChatMessageDto(
-            message.Id, user.DisplayName, user.AvatarUrl,
+            message.Id, message.UserDisplayName,
             message.Content, message.SentAt
         );
     }
@@ -47,8 +41,7 @@ public class ChatService : IChatService
 
         return messages.Select(msg => new ChatMessageDto(
             msg.Id,
-            msg.User?.DisplayName ?? "Desconhecido",
-            msg.User?.AvatarUrl ?? "",
+            msg.UserDisplayName,
             msg.Content,
             msg.SentAt
         )).ToList();

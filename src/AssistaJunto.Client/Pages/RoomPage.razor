@@ -23,7 +23,11 @@
     }
 </div>
 
-@if (_room is null)
+@if (_showNamePrompt)
+{
+    <NamePromptModal OnConfirm="OnNameSubmitted" />
+}
+else if (_room is null)
 {
     <div class="d-flex flex-column justify-content-center align-items-center vh-100 bg-black">
         <div class="spinner-border text-primary mb-3"></div>
@@ -141,6 +145,7 @@ else
     private bool _playerInitialized;
     private bool _playerReady;
     private bool _isAddingVideos;
+    private bool _showNamePrompt;
     private DotNetObjectReference<RoomPage>? _dotNetRef;
     private ElementReference _chatContainer;
 
@@ -150,12 +155,26 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthState.InitializeAsync();
+
         if (!AuthState.IsAuthenticated)
         {
-            Nav.NavigateTo("/");
+            _showNamePrompt = true;
             return;
         }
 
+        await JoinRoomAsync();
+    }
+
+    private async Task OnNameSubmitted(string name)
+    {
+        await AuthState.SetUsernameAsync(name);
+        _showNamePrompt = false;
+        await JoinRoomAsync();
+    }
+
+    private async Task JoinRoomAsync()
+    {
         _room = await Api.GetRoomAsync(RoomHash);
         if (_room is null)
         {

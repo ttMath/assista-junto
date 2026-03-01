@@ -39,14 +39,14 @@ namespace AssistaJunto.Infrastructure.Data.Migrations
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("UserDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("RoomId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("ChatMessages");
                 });
@@ -60,8 +60,10 @@ namespace AssistaJunto.Infrastructure.Data.Migrations
                     b.Property<DateTime>("AddedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("AddedByUserId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("AddedByDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("Order")
                         .HasColumnType("integer");
@@ -85,8 +87,6 @@ namespace AssistaJunto.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AddedByUserId");
 
                     b.HasIndex("RoomId");
 
@@ -124,8 +124,10 @@ namespace AssistaJunto.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("OwnerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(200)
@@ -138,8 +140,6 @@ namespace AssistaJunto.Infrastructure.Data.Migrations
 
                     b.HasIndex("Hash")
                         .IsUnique();
-
-                    b.HasIndex("OwnerId");
 
                     b.ToTable("Rooms");
                 });
@@ -190,42 +190,15 @@ namespace AssistaJunto.Infrastructure.Data.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("AssistaJunto.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AssistaJunto.Domain.Entities.PlaylistItem", b =>
                 {
-                    b.HasOne("AssistaJunto.Domain.Entities.User", "AddedBy")
-                        .WithMany()
-                        .HasForeignKey("AddedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("AssistaJunto.Domain.Entities.Room", null)
                         .WithMany("Playlist")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("AddedBy");
-                });
-
-            modelBuilder.Entity("AssistaJunto.Domain.Entities.Room", b =>
-                {
-                    b.HasOne("AssistaJunto.Domain.Entities.User", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("AssistaJunto.Domain.Entities.Room", b =>

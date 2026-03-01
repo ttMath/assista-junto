@@ -1,14 +1,11 @@
-using System.Security.Claims;
 using AssistaJunto.Application.DTOs;
 using AssistaJunto.Application.Interfaces;
 using AssistaJunto.API.Hubs;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
 namespace AssistaJunto.API.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class RoomsController : ControllerBase
@@ -27,8 +24,9 @@ public class RoomsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomRequest request)
     {
-        var userId = GetUserId();
-        var room = await _roomService.CreateRoomAsync(request, userId);
+        var username = GetUsername();
+        if (username is null) return BadRequest("Header X-Username é obrigatório.");
+        var room = await _roomService.CreateRoomAsync(request, username);
         return CreatedAtAction(nameof(GetRoom), new { hash = room.Hash }, room);
     }
 
@@ -59,16 +57,18 @@ public class RoomsController : ControllerBase
     [HttpPost("{hash}/playlist")]
     public async Task<IActionResult> AddToPlaylist(string hash, [FromBody] AddToPlaylistRequest request)
     {
-        var userId = GetUserId();
-        var item = await _playlistService.AddToPlaylistAsync(hash, request, userId);
+        var username = GetUsername();
+        if (username is null) return BadRequest("Header X-Username é obrigatório.");
+        var item = await _playlistService.AddToPlaylistAsync(hash, request, username);
         return Ok(item);
     }
 
     [HttpPost("{hash}/playlist/from-url")]
     public async Task<IActionResult> AddPlaylistByUrl(string hash, [FromBody] AddPlaylistByUrlRequest request)
     {
-        var userId = GetUserId();
-        var result = await _playlistService.AddPlaylistByUrlAsync(hash, request.Url, userId);
+        var username = GetUsername();
+        if (username is null) return BadRequest("Header X-Username é obrigatório.");
+        var result = await _playlistService.AddPlaylistByUrlAsync(hash, request.Url, username);
 
         foreach (var item in result.Items)
         {
@@ -105,8 +105,9 @@ public class RoomsController : ControllerBase
     {
         try
         {
-            var userId = GetUserId();
-            await _roomService.DeleteRoomAsync(hash, userId);
+            var username = GetUsername();
+            if (username is null) return BadRequest("Header X-Username é obrigatório.");
+            await _roomService.DeleteRoomAsync(hash, username);
             return NoContent();
         }
         catch (InvalidOperationException ex)
@@ -117,12 +118,15 @@ public class RoomsController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Erro ao processar a eliminação." });
         }
     }
 
-    private Guid GetUserId() =>
-        Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    private string? GetUsername()
+    {
+        var username = Request.Headers["X-Username"].FirstOrDefault();
+        return string.IsNullOrWhiteSpace(username) ? null : username;
+    }
 }

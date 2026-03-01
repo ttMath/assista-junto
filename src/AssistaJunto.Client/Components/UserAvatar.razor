@@ -1,0 +1,37 @@
+@code {
+    [Parameter] public string DisplayName { get; set; } = "";
+    [Parameter] public int Size { get; set; } = 32;
+
+    private static readonly (string Background, string Foreground)[] Colors =
+    [
+        ("#5865F2", "#dfe1ff"),
+        ("#ED4245", "#ffd6d6"),
+        ("#3BA55C", "#d4f5de"),
+        ("#FAA61A", "#fff1d6"),
+        ("#EB459E", "#ffd6ec"),
+        ("#9B59B6", "#ead6ff"),
+        ("#1ABC9C", "#d6f5ef"),
+        ("#E67E22", "#ffe3cc"),
+        ("#2196F3", "#d6ecff"),
+        ("#F47FBE", "#ffe0f0"),
+        ("#7289DA", "#dce2f7"),
+        ("#43B581", "#d6f0e2"),
+    ];
+
+    private (string Bg, string Fg) GetColors()
+    {
+        if (string.IsNullOrEmpty(DisplayName))
+            return (Colors[0].Background, Colors[0].Foreground);
+
+        var hash = DisplayName.Sum(c => (int)c);
+        var index = Math.Abs(hash) % Colors.Length;
+        return (Colors[index].Background, Colors[index].Foreground);
+    }
+}
+
+<div class="user-avatar" style="width:@(Size)px;height:@(Size)px;min-width:@(Size)px;background:@(GetColors().Bg);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+    <svg viewBox="0 0 24 24" width="@(Size * 0.55)" height="@(Size * 0.55)" fill="@(GetColors().Fg)">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
+    </svg>
+</div>

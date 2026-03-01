@@ -8,13 +8,12 @@ public class PlaylistItem
     public string Title { get; private set; } = string.Empty;
     public string ThumbnailUrl { get; private set; } = string.Empty;
     public int Order { get; private set; }
-    public Guid AddedByUserId { get; private set; }
-    public User AddedBy { get; private set; } = null!;
+    public string AddedByDisplayName { get; private set; } = string.Empty;
     public DateTime AddedAt { get; private set; }
 
     private PlaylistItem() { }
 
-    public PlaylistItem(Guid roomId, string videoId, string title, string thumbnailUrl, int order, Guid addedByUserId)
+    public PlaylistItem(Guid roomId, string videoId, string title, string thumbnailUrl, int order, string addedByDisplayName)
     {
         if (string.IsNullOrWhiteSpace(videoId))
             throw new ArgumentException("Video ID é obrigatório.", nameof(videoId));
@@ -24,7 +23,7 @@ public class PlaylistItem
         Title = title;
         ThumbnailUrl = thumbnailUrl;
         Order = order;
-        AddedByUserId = addedByUserId;
+        AddedByDisplayName = addedByDisplayName;
         AddedAt = DateTime.UtcNow;
     }
 

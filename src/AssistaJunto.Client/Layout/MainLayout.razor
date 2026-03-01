@@ -1,17 +1,46 @@
 ﻿@inherits LayoutComponentBase
+@using AssistaJunto.Client.Components
 @inject AuthStateService AuthState
-@inject ApiService Api
 @inject NavigationManager Nav
 @implements IDisposable
 
 <div class="page">
     <header class="top-bar d-flex align-items-center justify-content-between px-4 py-2 bg-dark text-white">
-        <button @onclick="@(() => Nav.NavigateTo("", true))" class="text-decoration-none text-white fw-bold fs-4 home-btn">🎬 Assista Junto — JAÇA CITY</button>
         <div class="d-flex align-items-center gap-3">
-            @if (AuthState.IsAuthenticated && AuthState.CurrentUser is not null)
+            <button @onclick="@(() => Nav.NavigateTo("", true))" class="text-decoration-none text-white fw-bold fs-4 home-btn">🎬 Assista Junto — JAÇA CITY</button>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            @if (AuthState.IsAuthenticated)
             {
-                <img src="@AuthState.CurrentUser.AvatarUrl" alt="avatar" class="rounded-circle" width="32" height="32" />
-                <span>@AuthState.CurrentUser.DisplayName</span>
+                @if (_isEditingName)
+                {
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="text"
+                               class="form-control form-control-sm edit-name-input"
+                               @bind="_editNameInput"
+                               @bind:event="oninput"
+                               @onkeydown="OnEditKeyDown"
+                               maxlength="30"
+                               @ref="_editInput" />
+                        <button class="btn btn-sm btn-success px-2 py-0" @onclick="SaveName" disabled="@string.IsNullOrWhiteSpace(_editNameInput)" title="Salvar">
+                            ✓
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary px-2 py-0" @onclick="CancelEdit" title="Cancelar">
+                            ✕
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-sm user-name-btn d-flex align-items-center gap-2" @onclick="StartEdit" title="Clique para alterar o nome">
+                        <UserAvatar DisplayName="@AuthState.Username" Size="26" />
+                        <span class="fw-semibold">@AuthState.Username</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                    </button>
+                }
                 <button class="btn btn-outline-light btn-sm" @onclick="Logout">Sair</button>
             }
         </div>
@@ -23,34 +52,46 @@
 </div>
 
 @code {
+    private bool _isEditingName;
+    private string _editNameInput = "";
+    private ElementReference _editInput;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             AuthState.OnAuthStateChanged += OnAuthChanged;
             await AuthState.InitializeAsync();
-
-            if (AuthState.IsAuthenticated && AuthState.CurrentUser is null)
-            {
-                try
-                {
-                    var user = await Api.GetCurrentUserAsync();
-                    if (user is not null)
-                        AuthState.SetCurrentUser(user);
-                    else
-                        await AuthState.LogoutAsync();
-                }
-                catch
-                {
-                    await AuthState.LogoutAsync();
-                }
-            }
-
             StateHasChanged();
         }
     }
 
     private void OnAuthChanged() => InvokeAsync(StateHasChanged);
+
+    private void StartEdit()
+    {
+        _editNameInput = AuthState.Username ?? "";
+        _isEditingName = true;
+    }
+
+    private void CancelEdit()
+    {
+        _isEditingName = false;
+    }
+
+    private async Task SaveName()
+    {
+        if (string.IsNullOrWhiteSpace(_editNameInput)) return;
+
+        await AuthState.SetUsernameAsync(_editNameInput.Trim());
+        _isEditingName = false;
+    }
+
+    private async Task OnEditKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SaveName();
+        else if (e.Key == "Escape") CancelEdit();
+    }
 
     private async Task Logout()
     {

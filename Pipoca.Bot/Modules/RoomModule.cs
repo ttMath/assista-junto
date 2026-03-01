@@ -40,14 +40,16 @@ public class RoomModule(AssistaJuntoApiClient apiClient, IConfiguration configur
             if (result.Rooms.Count == 0)
                 return "📭 Nenhuma sala ativa no momento.";
 
-            var response = "📋 **Salas Ativas:**\n\n";
+            var response = $"📋 **Salas Ativas** ({result.Rooms.Count}):\n\n";
 
             foreach (var room in result.Rooms)
             {
                 var roomUrl = room.Url;
+                var statusUsuarios = room.UsersCount == 0 ? "❌ Vazia" : $" {room.UsersCount} {(room.UsersCount == 1 ? "usuário" : "usuários")}";
+
                 response += $"🎬 **{room.Name}**\n" +
                            $"   👤 Anfitrião: {room.OwnerDisplayName}\n" +
-                           $"   👥 Usuários: {room.UsersCount}\n" +
+                           $"   👥 {statusUsuarios}\n" +
                            $"   🔗 [{room.Hash}](<{roomUrl}>)\n\n";
             }
 
@@ -64,7 +66,6 @@ public class RoomModule(AssistaJuntoApiClient apiClient, IConfiguration configur
     {
         try
         {
-            // Busca a sala pelo nome
             var deleteByNameResult = await apiClient.DeleteRoomByNameAsync(nome);
             if (deleteByNameResult.Success)
                 return $"✅ Sala **{nome}** deletada com sucesso!";

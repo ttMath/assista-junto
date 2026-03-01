@@ -10,4 +10,4 @@
     <File Path="docker/client-entrypoint.sh" />
     <File Path="docker/nginx.conf" />
     <File Path="Dockerfile" />
-  </Folder><Folder Name="/src/">  <Project Path="src/AssistaJunto.API/AssistaJunto.API.csproj" />  <Project Path="src/AssistaJunto.Application/AssistaJunto.Application.csproj" />  <Project Path="src/AssistaJunto.Client/AssistaJunto.Client.csproj" />  <Project Path="src/AssistaJunto.Domain/AssistaJunto.Domain.csproj" />  <Project Path="src/AssistaJunto.Infrastructure/AssistaJunto.Infrastructure.csproj" /></Folder></Solution>
+  </Folder><Folder Name="/src/">  <Project Path="Pipoca.Bot/Pipoca.Bot.csproj" Id="fd2095c4-8f34-4f9d-8e78-d6d20ab746a0" />  <Project Path="src/AssistaJunto.API/AssistaJunto.API.csproj" />  <Project Path="src/AssistaJunto.Application/AssistaJunto.Application.csproj" />  <Project Path="src/AssistaJunto.Client/AssistaJunto.Client.csproj" />  <Project Path="src/AssistaJunto.Domain/AssistaJunto.Domain.csproj" />  <Project Path="src/AssistaJunto.Infrastructure/AssistaJunto.Infrastructure.csproj" /></Folder></Solution>

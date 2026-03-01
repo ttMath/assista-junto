@@ -7,6 +7,7 @@ public interface IRoomService
     Task<RoomDto> CreateRoomAsync(CreateRoomRequest request, string username);
     Task<List<RoomDto>> GetActiveRoomsAsync();
     Task<RoomDto?> GetRoomByHashAsync(string hash);
+    Task<RoomDto?> GetRoomByNameAsync(string name);
     Task<RoomStateDto?> GetRoomStateAsync(string hash);
     Task<bool> JoinRoomAsync(string hash, string? password);
     Task UpdatePlayerStateAsync(string hash, double currentTime, bool isPlaying);

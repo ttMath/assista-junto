@@ -1,4 +1,5 @@
 using AssistaJunto.API.Hubs;
+using AssistaJunto.API.HostedServices;
 using AssistaJunto.Application.Interfaces;
 using AssistaJunto.Application.Services;
 using AssistaJunto.Domain.Interfaces;
@@ -21,6 +22,8 @@ builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 
 builder.Services.AddHttpClient();
+
+builder.Services.AddHostedService<InactiveRoomsCleanupService>();
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR(options =>

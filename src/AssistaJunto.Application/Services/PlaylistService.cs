@@ -11,40 +11,32 @@ namespace AssistaJunto.Application.Services;
 public class PlaylistService : IPlaylistService
 {
     private readonly IRoomRepository _roomRepository;
-    private readonly IUserRepository _userRepository;
     private readonly YoutubeClient _youtubeClient;
 
-    public PlaylistService(IRoomRepository roomRepository, IUserRepository userRepository)
+    public PlaylistService(IRoomRepository roomRepository)
     {
         _roomRepository = roomRepository;
-        _userRepository = userRepository;
         _youtubeClient = new YoutubeClient();
     }
 
-    public async Task<PlaylistItemDto> AddToPlaylistAsync(string roomHash, AddToPlaylistRequest request, Guid userId)
+    public async Task<PlaylistItemDto> AddToPlaylistAsync(string roomHash, AddToPlaylistRequest request, string username)
     {
         var room = await _roomRepository.GetByHashAsync(roomHash)
             ?? throw new InvalidOperationException("Sala não encontrada.");
 
-        var user = await _userRepository.GetByIdAsync(userId)
-            ?? throw new InvalidOperationException("Usuário não encontrado.");
-
-        var item = room.AddToPlaylist(request.VideoId, request.Title, request.ThumbnailUrl, userId);
+        var item = room.AddToPlaylist(request.VideoId, request.Title, request.ThumbnailUrl, username);
         await _roomRepository.UpdateAsync(room);
 
         return new PlaylistItemDto(
             item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
-            item.Order, user.DisplayName, item.AddedAt
+            item.Order, item.AddedByDisplayName, item.AddedAt
         );
     }
 
-    public async Task<AddPlaylistByUrlResponse> AddPlaylistByUrlAsync(string roomHash, string url, Guid userId)
+    public async Task<AddPlaylistByUrlResponse> AddPlaylistByUrlAsync(string roomHash, string url, string username)
     {
         var room = await _roomRepository.GetByHashAsync(roomHash)
             ?? throw new InvalidOperationException("Sala não encontrada.");
-
-        var user = await _userRepository.GetByIdAsync(userId)
-            ?? throw new InvalidOperationException("Usuário não encontrado.");
 
         var parsedPlaylistId = PlaylistId.TryParse(url);
         var addedItems = new List<PlaylistItemDto>();
@@ -61,11 +53,11 @@ public class PlaylistService : IPlaylistService
                 var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
                     ?? $"https://img.youtube.com/vi/{video.Id}/mqdefault.jpg";
 
-                var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, userId);
+                var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, username);
 
                 addedItems.Add(new PlaylistItemDto(
                     item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
-                    item.Order, user.DisplayName, item.AddedAt
+                    item.Order, item.AddedByDisplayName, item.AddedAt
                 ));
             }
         }
@@ -84,11 +76,11 @@ public class PlaylistService : IPlaylistService
             var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
                 ?? $"https://img.youtube.com/vi/{videoIdStr}/mqdefault.jpg";
 
-            var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, userId);
+            var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, username);
 
             addedItems.Add(new PlaylistItemDto(
                 item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
-                item.Order, user.DisplayName, item.AddedAt
+                item.Order, item.AddedByDisplayName, item.AddedAt
             ));
         }
 
@@ -122,7 +114,7 @@ public class PlaylistService : IPlaylistService
 
         return room.Playlist.OrderBy(p => p.Order).Select(p => new PlaylistItemDto(
             p.Id, p.VideoId, p.Title, p.ThumbnailUrl, p.Order,
-            p.AddedBy?.DisplayName ?? "Desconhecido", p.AddedAt
+            p.AddedByDisplayName, p.AddedAt
         )).ToList();
     }
 }

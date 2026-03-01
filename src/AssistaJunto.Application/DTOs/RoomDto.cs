@@ -12,8 +12,7 @@ public record RoomDto(
     double CurrentTime,
     bool IsPlaying,
     List<PlaylistItemDto> Playlist,
-    DateTime CreatedAt,
-    Guid OwnerId
+    DateTime CreatedAt
 );
 
 public record CreateRoomRequest(string Name, string? Password);

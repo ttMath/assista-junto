@@ -1,31 +1,26 @@
 using System.Collections.Concurrent;
-using System.Security.Claims;
 using AssistaJunto.Application.DTOs;
 using AssistaJunto.Application.Interfaces;
 using AssistaJunto.Domain.Enums;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace AssistaJunto.API.Hubs;
 
-[Authorize]
 public class RoomHub : Hub
 {
     private readonly IRoomService _roomService;
     private readonly IChatService _chatService;
     private readonly IPlaylistService _playlistService;
-    private readonly IAuthService _authService;
 
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, RoomUserInfo>> _roomUsers = new();
     private static readonly ConcurrentDictionary<string, string> _connectionRooms = new();
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, int>> _roomUserCounts = new();
 
-    public RoomHub(IRoomService roomService, IChatService chatService, IPlaylistService playlistService, IAuthService authService)
+    public RoomHub(IRoomService roomService, IChatService chatService, IPlaylistService playlistService)
     {
         _roomService = roomService;
         _chatService = chatService;
         _playlistService = playlistService;
-        _authService = authService;
     }
 
     public async Task JoinRoom(string roomHash)
@@ -36,12 +31,8 @@ public class RoomHub : Hub
         if (state is not null)
             await Clients.Caller.SendAsync("ReceiveRoomState", state);
 
-        var userId = GetUserId();
-        var user = await _authService.GetCurrentUserAsync(userId);
-        var userInfo = new RoomUserInfo(
-            user?.DisplayName ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Anônimo",
-            user?.AvatarUrl ?? ""
-        );
+        var username = GetUsername();
+        var userInfo = new RoomUserInfo(username);
 
         _connectionRooms[Context.ConnectionId] = roomHash;
 
@@ -49,8 +40,7 @@ public class RoomHub : Hub
         users[Context.ConnectionId] = userInfo;
 
         var userCounts = _roomUserCounts.GetOrAdd(roomHash, _ => new ConcurrentDictionary<string, int>());
-        var userIdStr = userId.ToString();
-        var newConnCount = userCounts.AddOrUpdate(userIdStr, 1, (_, old) => old + 1);
+        var newConnCount = userCounts.AddOrUpdate(username, 1, (_, old) => old + 1);
         if (newConnCount == 1)
         {
             try
@@ -81,34 +71,27 @@ public class RoomHub : Hub
                 _roomUsers.TryRemove(roomHash, out _);
         }
 
-        try
+        var username = GetUsername();
+        if (_roomUserCounts.TryGetValue(roomHash, out var userCounts))
         {
-            var userId = GetUserId();
-            var userIdStr = userId.ToString();
-            if (_roomUserCounts.TryGetValue(roomHash, out var userCounts))
+            if (userCounts.TryGetValue(username, out var connCount))
             {
-                if (userCounts.TryGetValue(userIdStr, out var connCount))
+                if (connCount <= 1)
                 {
-                    if (connCount <= 1)
-                    {
-                        userCounts.TryRemove(userIdStr, out _);
-                        try { await _roomService.DecrementUserCountAsync(roomHash); } catch { }
-                    }
-                    else
-                    {
-                        userCounts[userIdStr] = connCount - 1;
-                    }
-
-                    if (userCounts.IsEmpty)
-                        _roomUserCounts.TryRemove(roomHash, out _);
+                    userCounts.TryRemove(username, out _);
+                    try { await _roomService.DecrementUserCountAsync(roomHash); } catch { }
                 }
+                else
+                {
+                    userCounts[username] = connCount - 1;
+                }
+
+                if (userCounts.IsEmpty)
+                    _roomUserCounts.TryRemove(roomHash, out _);
             }
         }
-        catch
-        {
-        }
 
-        var userName = userInfo?.DisplayName ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Anônimo";
+        var userName = userInfo?.DisplayName ?? username;
         await Clients.OthersInGroup(roomHash).SendAsync("UserLeft", userName);
 
         var userList = users?.Values.ToList() ?? [];
@@ -127,35 +110,27 @@ public class RoomHub : Hub
                     _roomUsers.TryRemove(roomHash, out _);
             }
 
-            try
+            var username = userInfo?.DisplayName ?? "Anônimo";
+            if (_roomUserCounts.TryGetValue(roomHash, out var userCounts))
             {
-                var userId = GetUserId();
-                var userIdStr = userId.ToString();
-                if (_roomUserCounts.TryGetValue(roomHash, out var userCounts))
+                if (userCounts.TryGetValue(username, out var connCount))
                 {
-                    if (userCounts.TryGetValue(userIdStr, out var connCount))
+                    if (connCount <= 1)
                     {
-                        if (connCount <= 1)
-                        {
-                            userCounts.TryRemove(userIdStr, out _);
-                            try { await _roomService.DecrementUserCountAsync(roomHash); } catch { }
-                        }
-                        else
-                        {
-                            userCounts[userIdStr] = connCount - 1;
-                        }
-
-                        if (userCounts.IsEmpty)
-                            _roomUserCounts.TryRemove(roomHash, out _);
+                        userCounts.TryRemove(username, out _);
+                        try { await _roomService.DecrementUserCountAsync(roomHash); } catch { }
                     }
+                    else
+                    {
+                        userCounts[username] = connCount - 1;
+                    }
+
+                    if (userCounts.IsEmpty)
+                        _roomUserCounts.TryRemove(roomHash, out _);
                 }
             }
-            catch
-            {
-            }
 
-            var userName = userInfo?.DisplayName ?? "Anônimo";
-            await Clients.OthersInGroup(roomHash).SendAsync("UserLeft", userName);
+            await Clients.OthersInGroup(roomHash).SendAsync("UserLeft", username);
 
             var userList = users?.Values.ToList() ?? [];
             await Clients.Group(roomHash).SendAsync("ReceiveUserList", userList);
@@ -198,8 +173,8 @@ public class RoomHub : Hub
     {
         try
         {
-            var userId = GetUserId();
-            var message = await _chatService.SendMessageAsync(roomHash, userId, content);
+            var username = GetUsername();
+            var message = await _chatService.SendMessageAsync(roomHash, username, content);
             await Clients.Group(roomHash).SendAsync("ReceiveChatMessage", message);
         }
         catch (Exception ex)
@@ -212,8 +187,8 @@ public class RoomHub : Hub
     {
         try
         {
-            var userId = GetUserId();
-            var item = await _playlistService.AddToPlaylistAsync(roomHash, request, userId);
+            var username = GetUsername();
+            var item = await _playlistService.AddToPlaylistAsync(roomHash, request, username);
             await Clients.Group(roomHash).SendAsync("PlaylistUpdated", item);
         }
         catch (Exception ex)
@@ -244,10 +219,10 @@ public class RoomHub : Hub
         }
     }
 
-    private Guid GetUserId()
+    private string GetUsername()
     {
-        var claim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? throw new HubException("Usuário não autenticado.");
-        return Guid.Parse(claim);
+        var httpContext = Context.GetHttpContext();
+        var username = httpContext?.Request.Query["username"].FirstOrDefault();
+        return string.IsNullOrWhiteSpace(username) ? "Anônimo" : username;
     }
 }

@@ -4,7 +4,7 @@ namespace AssistaJunto.Application.Interfaces;
 
 public interface IRoomService
 {
-    Task<RoomDto> CreateRoomAsync(CreateRoomRequest request, Guid userId);
+    Task<RoomDto> CreateRoomAsync(CreateRoomRequest request, string username);
     Task<List<RoomDto>> GetActiveRoomsAsync();
     Task<RoomDto?> GetRoomByHashAsync(string hash);
     Task<RoomStateDto?> GetRoomStateAsync(string hash);
@@ -13,8 +13,8 @@ public interface IRoomService
     Task<bool> NextVideoAsync(string hash, int? expectedIndex = null);
     Task<bool> PreviousVideoAsync(string hash, int? expectedIndex = null);
     Task<bool> JumpToVideoAsync(string hash, int videoIndex);
-    Task CloseRoomAsync(string hash, Guid userId);
-    Task DeleteRoomAsync(string hash, Guid userId);
+    Task CloseRoomAsync(string hash, string username);
+    Task DeleteRoomAsync(string hash, string username);
     Task IncrementUserCountAsync(string hash);
     Task DecrementUserCountAsync(string hash);
 }

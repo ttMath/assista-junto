@@ -8,8 +8,7 @@ public class Room
     public string Hash { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public string? PasswordHash { get; private set; }
-    public Guid OwnerId { get; private set; }
-    public User Owner { get; private set; } = null!;
+    public string OwnerName { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
     public int CurrentVideoIndex { get; private set; }
     public double CurrentTime { get; private set; }
@@ -25,7 +24,7 @@ public class Room
 
     private Room() { }
 
-    public Room(string name, Guid ownerId, string? password = null)
+    public Room(string name, string ownerName, string? password = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Nome da sala é obrigatório.", nameof(name));
@@ -33,7 +32,7 @@ public class Room
         Id = Guid.NewGuid();
         Hash = GenerateHash();
         Name = name.Trim();
-        OwnerId = ownerId;
+        OwnerName = ownerName;
         IsActive = true;
         CurrentVideoIndex = 0;
         CurrentTime = 0;
@@ -59,13 +58,13 @@ public class Room
         IsPlaying = isPlaying;
     }
 
-    public PlaylistItem AddToPlaylist(string videoId, string title, string thumbnailUrl, Guid addedByUserId)
+    public PlaylistItem AddToPlaylist(string videoId, string title, string thumbnailUrl, string addedByName)
     {
         if (_playlist.Any(p => p.VideoId == videoId))
             throw new InvalidOperationException("Este vídeo já está na playlist.");
 
         var order = _playlist.Count;
-        var item = new PlaylistItem(Id, videoId, title, thumbnailUrl, order, addedByUserId);
+        var item = new PlaylistItem(Id, videoId, title, thumbnailUrl, order, addedByName);
         _playlist.Add(item);
         return item;
     }

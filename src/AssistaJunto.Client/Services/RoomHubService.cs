@@ -31,11 +31,10 @@ public class RoomHubService : IAsyncDisposable
     {
         if (_hubConnection is not null) return;
 
+        var username = Uri.EscapeDataString(_authState.Username ?? "Anônimo");
+
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl($"{_apiBaseUrl}/hubs/room", options =>
-            {
-                options.AccessTokenProvider = () => Task.FromResult(_authState.Token);
-            })
+            .WithUrl($"{_apiBaseUrl}/hubs/room?username={username}")
             .WithAutomaticReconnect()
             .Build();
 

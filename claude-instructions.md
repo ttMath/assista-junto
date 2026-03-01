@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-**Assista Junto** é uma plataforma web de consumo de mídia em grupo, exclusiva para membros do servidor Discord **JAÇA CITY**. Os usuários fazem login via Discord OAuth2, entram em um lobby e podem criar ou acessar salas de exibição sincronizada de vídeos do YouTube (estilo Watch2Gether).
+**Assista Junto** é uma plataforma web de consumo de mídia em grupo, criada para a comunidade **JAÇA CITY**. Os usuários informam seu nome ao acessar (armazenado no localStorage do navegador), entram em um lobby e podem criar ou acessar salas de exibição sincronizada de vídeos do YouTube (estilo Watch2Gether). Não há autenticação externa — a identidade do usuário é apenas o nome escolhido.
 
 ## Estrutura do Monorepo
 
@@ -62,7 +62,7 @@ assistajunto/
 | Tempo Real     | SignalR (WebSockets)                         |
 | Banco de Dados | PostgreSQL 16                                |
 | ORM            | Entity Framework Core 10                     |
-| Autenticação   | Discord OAuth2 + JWT                         |
+| Autenticação   | Nome no localStorage (sem auth externa)      |
 | Player         | YouTube IFrame Player API via JSInterop      |
 | Deploy         | Docker + Docker Compose                      |
 | Reverse Proxy  | Traefik v3 (SSL via Let's Encrypt)           |
@@ -107,7 +107,7 @@ Nenhum arquivo de código ou `appsettings.json` contém URLs, segredos ou creden
 
 **API (backend):**
 - `DotNetEnv.Env.TraversePath().Load()` no topo de `Program.cs` carrega o `.env` da raiz
-- O `.env` define variáveis com `__` como separador de hierarquia (`Jwt__Secret` → `Jwt:Secret`)
+- O `.env` define variáveis com `__` como separador de hierarquia (`ConnectionStrings__DefaultConnection` → `ConnectionStrings:DefaultConnection`)
 - `appsettings.json` contém **apenas** `Logging` e `AllowedHosts`
 - Se uma variável obrigatória estiver ausente, a API lança `InvalidOperationException` na inicialização (fail-fast)
 
@@ -124,17 +124,6 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=
 POSTGRES_DB=assistajunto
 ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=assistajunto;Username=postgres;Password=
-
-# Discord OAuth2
-Discord__ClientId=
-Discord__ClientSecret=
-Discord__RedirectUri=https://localhost:7045/api/auth/callback
-
-# JWT
-Jwt__Secret=
-Jwt__Issuer=AssistaJunto
-Jwt__Audience=AssistaJuntoClient
-Jwt__ExpirationInHours=24
 
 # URLs
 ClientUrl=https://localhost:7036        # CORS da API — URL do frontend
@@ -155,7 +144,7 @@ cp .env.example .env
 cp src/AssistaJunto.Client/wwwroot/appsettings.Development.json.example \
    src/AssistaJunto.Client/wwwroot/appsettings.Development.json
 
-# 2. Preencher .env com suas credenciais Discord e Jwt__Secret
+# 2. Preencher .env com a senha do Postgres (se necessário)
 
 # 3. Subir banco (opcional — ou usar postgres local)
 docker compose up postgres -d
@@ -194,12 +183,10 @@ Internet :80/:443
 ### Variáveis que mudam para produção no `.env`
 
 ```
-Discord__RedirectUri=https://api.assistajunto.com.br/api/auth/callback
 ClientUrl=https://www.assistajunto.com.br
 API_BASE_URL=https://api.assistajunto.com.br
 ACME_EMAIL=voce@seudominio.com
 POSTGRES_PASSWORD=senha_forte_aqui
-Jwt__Secret=segredo_longo_aleatorio_min_32_chars
 ```
 
 > `ConnectionStrings__DefaultConnection` **não precisa ser alterada** — o `docker-compose.yml`
@@ -238,48 +225,78 @@ docker compose logs -f client
 
 ## Contratos da API (Endpoints Principais)
 
-### Autenticação
-- `GET /api/auth/discord` — Redireciona para Discord OAuth2
-- `GET /api/auth/callback?code=xxx` — Callback do Discord OAuth2, redireciona ao Client com `?token=JWT` ou `?error=msg`
-- `GET /api/auth/me` — Retorna dados do usuário logado (requer JWT)
-- `PUT /api/auth/nickname` — Atualiza nickname customizado (requer JWT)
+### Identificação do Usuário
+- Não existe autenticação externa (sem Discord OAuth2, sem JWT)
+- O usuário informa seu nome na tela inicial do Client, que é salvo no `localStorage` do navegador (chave `user_name`)
+- O Client envia o nome via header `X-Username` em todas as requisições HTTP à API
+- O Client envia o nome via query string `?username=` na conexão SignalR
+- A API **não** cria nem persiste usuários no banco — o nome é apenas uma string usada como identificador de display
+- As entidades `Room`, `ChatMessage` e `PlaylistItem` armazenam o nome do criador/autor como string simples (sem FK para tabela `User`)
 
-### Fluxo de Autenticação Discord OAuth2
-1. Client: Botão "Entrar com Discord" → link para `{API}/api/auth/discord`
-2. API: Redireciona para `discord.com/api/oauth2/authorize` com scope `identify`
-3. Discord: Após aprovação, redireciona para `{API}/api/auth/callback?code=xxx`
-4. API: Troca `code` por access token, busca dados do user no Discord, cria/atualiza no banco, gera JWT
-5. API: Redireciona para `{Client}/auth/callback?token=JWT`
-6. Client (`AuthCallback.razor`): Salva JWT no localStorage, carrega dados do user via `/api/auth/me`, redireciona para Home
-7. Client (`MainLayout`): Em `OnAfterRenderAsync`, lê token do localStorage e carrega user se autenticado
+### Fluxo de Identificação
+1. Client (`Home.razor`): Usuário digita seu nome → salvo no `localStorage` via `AuthStateService.SetUsernameAsync()`
+2. Client (`MainLayout`): Em `OnAfterRenderAsync`, lê nome do `localStorage` via `AuthStateService.InitializeAsync()`
+3. Client (`ApiService`): Envia header `X-Username` em todas as chamadas HTTP
+4. Client (`RoomHubService`): Conecta ao SignalR com `?username=` na URL
+5. API (`RoomsController`): Lê `Request.Headers["X-Username"]` para identificar quem está criando/deletando salas
+6. API (`RoomHub`): Lê `Context.GetHttpContext().Request.Query["username"]` para identificar o usuário na conexão
 
 ### Observações Importantes
 - `localStorage` só funciona em `OnAfterRenderAsync` no Blazor WASM (não em `OnInitializedAsync`)
 - `AuthStateService` é registrado como **Scoped** (depende de `IJSRuntime`)
-- `ApiService.SetAuth()` sempre sobrescreve o header Authorization (evita duplicação)
+- `ApiService` envia `X-Username` via `HttpClient.DefaultRequestHeaders` (remove e re-adiciona a cada chamada)
 - `UseHttpsRedirection()` só é aplicado em `Development` — em produção o Traefik termina o TLS
+- A tabela `Users` existe no banco mas **não é utilizada** atualmente — as entidades não possuem FK para ela
 
 ### Salas
-- `POST /api/rooms` — Cria uma nova sala
+- `POST /api/rooms` — Cria uma nova sala (requer `X-Username`)
 - `GET /api/rooms` — Lista salas ativas (lobby)
 - `GET /api/rooms/{hash}` — Detalhes de uma sala
 - `POST /api/rooms/{hash}/join` — Entra na sala (com senha, se necessário)
+- `DELETE /api/rooms/{hash}` — Deleta uma sala (requer `X-Username`, apenas o dono)
 
 ### Playlist
-- `POST /api/rooms/{hash}/playlist` — Adiciona vídeo à playlist
+- `POST /api/rooms/{hash}/playlist` — Adiciona vídeo à playlist (requer `X-Username`)
+- `POST /api/rooms/{hash}/playlist/from-url` — Adiciona vídeo(s) por URL do YouTube (requer `X-Username`)
 - `DELETE /api/rooms/{hash}/playlist/{itemId}` — Remove vídeo da playlist
+- `DELETE /api/rooms/{hash}/playlist` — Limpa toda a playlist
 - `GET /api/rooms/{hash}/playlist` — Lista a playlist da sala
 
 ### SignalR Hub (`/hubs/room`)
+
+**Conexão**: `{API_BASE_URL}/hubs/room?username={nome}` — username é passado como query string
+
+**Métodos do servidor (Client → Server):**
 - `JoinRoom(roomHash)` — Entra no grupo SignalR da sala
 - `LeaveRoom(roomHash)` — Sai do grupo SignalR
 - `SendPlayerAction(roomHash, action)` — Envia ação do player
-- `SendChatMessage(roomHash, message)` — Envia mensagem no chat
-- `ReceivePlayerAction(action)` — Recebe ação do player (client handler)
-- `ReceiveChatMessage(message)` — Recebe mensagem do chat (client handler)
-- `ReceiveRoomState(state)` — Recebe estado atual ao entrar (client handler)
+- `SendChatMessage(roomHash, content)` — Envia mensagem no chat (username vem da query string)
+- `AddToPlaylist(roomHash, request)` — Adiciona vídeo à playlist
+- `SyncState(roomHash)` — Solicita estado atual da sala
+- `JumpToVideo(roomHash, videoIndex)` — Pula para vídeo específico na playlist
+
+**Eventos do cliente (Server → Client):**
+- `ReceivePlayerAction(action)` — Recebe ação do player
+- `ReceiveChatMessage(message)` — Recebe mensagem do chat
+- `ReceiveRoomState(state)` — Recebe estado atual ao entrar
+- `PlaylistUpdated(item)` — Novo item adicionado à playlist
+- `PlaylistCleared` — Playlist foi limpa
+- `UserJoined(userInfo)` — Usuário entrou na sala
+- `UserLeft(userName)` — Usuário saiu da sala
+- `ReceiveUserList(users)` — Lista atualizada de usuários online
+
+## Modelo de Dados
+
+### Entidades (sem FK para User)
+As entidades `Room`, `ChatMessage` e `PlaylistItem` armazenam nomes de usuário como strings simples. A tabela `Users` existe no banco mas não é referenciada por nenhuma FK.
+
+- **Room**: `Id`, `Hash`, `Name`, `PasswordHash?`, `OwnerName` (string), `IsActive`, `CurrentVideoIndex`, `CurrentTime`, `IsPlaying`, `UsersCount`, `CreatedAt`
+- **ChatMessage**: `Id`, `RoomId` (FK→Room), `UserDisplayName` (string), `Content`, `SentAt`
+- **PlaylistItem**: `Id`, `RoomId` (FK→Room), `VideoId`, `Title`, `ThumbnailUrl`, `Order`, `AddedByDisplayName` (string), `AddedAt`
+- **User**: `Id`, `DiscordId`, `DiscordUsername`, `AvatarUrl`, `Nickname`, `CreatedAt`, `LastLoginAt` — **não utilizada atualmente**
 
 ## Changelog
 
+- **v0.3.0** — Remoção completa de Discord OAuth2 e JWT. Autenticação substituída por nome de usuário salvo no localStorage. Entidades `Room`, `ChatMessage` e `PlaylistItem` desacopladas da tabela `User` — owner/autor armazenado como string simples (`OwnerName`, `UserDisplayName`, `AddedByDisplayName`). Removidos `AuthController`, `AuthService`, `IAuthService`, `AuthCallback.razor`. API identifica usuário via header `X-Username` (HTTP) e query string `?username=` (SignalR). Tabela `Users` mantida no banco mas sem uso ativo. Migration recriada do zero.
 - **v0.2.0** — Infraestrutura de deploy: Docker multi-stage (API + Client), docker-compose com Traefik + PostgreSQL, `.env` como única fonte de verdade (removidos todos os segredos e URLs de `appsettings.json` e código), nginx para servir Blazor WASM, `client-entrypoint.sh` para injeção de config em runtime.
 - **v0.1.0** — Estrutura inicial do monorepo, entidades de domínio, configuração DDD, SignalR Hub base, Blazor WASM scaffold.

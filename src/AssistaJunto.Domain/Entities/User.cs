@@ -12,31 +12,22 @@ public class User
 
     private User() { }
 
-    public User(string discordId, string discordUsername, string avatarUrl)
+    public User(string username)
     {
-        if (string.IsNullOrWhiteSpace(discordId))
-            throw new ArgumentException("Discord ID é obrigatório.", nameof(discordId));
-        if (string.IsNullOrWhiteSpace(discordUsername))
-            throw new ArgumentException("Username do Discord é obrigatório.", nameof(discordUsername));
+        if (string.IsNullOrWhiteSpace(username))
+            throw new ArgumentException("Nome de usuário é obrigatório.", nameof(username));
 
         Id = Guid.NewGuid();
-        DiscordId = discordId;
-        DiscordUsername = discordUsername;
-        AvatarUrl = avatarUrl;
+        DiscordId = Guid.NewGuid().ToString();
+        DiscordUsername = username.Trim();
+        AvatarUrl = string.Empty;
         CreatedAt = DateTime.UtcNow;
         LastLoginAt = DateTime.UtcNow;
     }
 
-    public void UpdateProfile(string discordUsername, string avatarUrl)
+    public void UpdateLastLogin()
     {
-        DiscordUsername = discordUsername;
-        AvatarUrl = avatarUrl;
         LastLoginAt = DateTime.UtcNow;
-    }
-
-    public void SetNickname(string? nickname)
-    {
-        Nickname = string.IsNullOrWhiteSpace(nickname) ? null : nickname.Trim();
     }
 
     public string DisplayName => Nickname ?? DiscordUsername;

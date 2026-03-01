@@ -33,11 +33,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Hash).HasMaxLength(16).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
             entity.Property(e => e.PasswordHash).HasMaxLength(200);
-
-            entity.HasOne(e => e.Owner)
-                .WithMany()
-                .HasForeignKey(e => e.OwnerId)
-                .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(e => e.OwnerName).HasMaxLength(100).IsRequired();
 
             entity.HasMany(e => e.Playlist)
                 .WithOne()
@@ -64,22 +60,14 @@ public class AppDbContext : DbContext
             entity.Property(e => e.VideoId).HasMaxLength(20).IsRequired();
             entity.Property(e => e.Title).HasMaxLength(300).IsRequired();
             entity.Property(e => e.ThumbnailUrl).HasMaxLength(500);
-
-            entity.HasOne(e => e.AddedBy)
-                .WithMany()
-                .HasForeignKey(e => e.AddedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(e => e.AddedByDisplayName).HasMaxLength(100);
         });
 
         modelBuilder.Entity<ChatMessage>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Content).HasMaxLength(1000).IsRequired();
-
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(e => e.UserDisplayName).HasMaxLength(100);
         });
     }
 }

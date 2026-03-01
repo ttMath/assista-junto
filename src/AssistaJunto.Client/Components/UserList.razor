@@ -10,8 +10,7 @@
             {
                 <div class="user-card-pill shadow-sm" title="@user.DisplayName">
                     <div class="avatar-wrapper">
-                        <img src="@(string.IsNullOrEmpty(user.AvatarUrl) ? "https://cdn.discordapp.com/embed/avatars/0.png" : user.AvatarUrl)"
-                             alt="avatar" width="26" height="26" class="rounded-circle" />
+                        <UserAvatar DisplayName="@user.DisplayName" Size="26" />
                         <div class="online-indicator"> </div>
                     </div>
                     <span class="user-name"> @user.DisplayName</span>
@@ -29,19 +28,8 @@
 
 @code {
     [Parameter]
-    public List<RoomUserModel> Users
-    {
-        get;
-        set;
-    }
-
-    = new();
+    public List<RoomUserModel> Users { get; set; } = new();
 
     [Parameter]
-    public string? RoomOwner
-    {
-        get;
-        set;
-    }
-
+    public string? RoomOwner { get; set; }
 }

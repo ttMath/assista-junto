@@ -63,7 +63,6 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5000
-      # Sobrescreve a connection string para usar o hostname interno do Docker
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
     depends_on:
       postgres:
@@ -123,6 +122,7 @@ services:
       - api
     networks:
       - internal
+      - proxy
 
 volumes:
   postgres_data:

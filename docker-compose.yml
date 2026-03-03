@@ -108,6 +108,22 @@ services:
       - traefik.http.middlewares.force-www.redirectregex.replacement=https://www.assistajunto.com.br/$${1}
       - traefik.http.middlewares.force-www.redirectregex.permanent=true
 
+  # ----------------------------------------------------------------------
+  # Pipoca Bot (Discord)
+  # ----------------------------------------------------------------------
+  pipocabot:
+    build:
+      context: .
+      dockerfile: pipocabot.Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      API_BASE_URL: http://api:5000/
+    depends_on:
+      - api
+    networks:
+      - internal
+
 volumes:
   postgres_data:
   letsencrypt:

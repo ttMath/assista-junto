@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using AssistaJunto.Application.DTOs;
 using AssistaJunto.Application.Interfaces;
 using AssistaJunto.Domain.Interfaces;
@@ -17,6 +18,32 @@ public class PlaylistService : IPlaylistService
     {
         _roomRepository = roomRepository;
         _youtubeClient = new YoutubeClient();
+    }
+
+    private static VideoId? TryParseVideoId(string url)
+    {
+        var parsedVideoId = VideoId.TryParse(url);
+        if (parsedVideoId is not null)
+            return parsedVideoId;
+
+        var patterns = new[]
+        {
+            @"(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})",  
+            @"youtube\.com\/.*[?&]v=([a-zA-Z0-9_-]{11})"
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var match = Regex.Match(url, pattern);
+            if (match.Success && match.Groups.Count > 1)
+            {
+                var videoIdStr = match.Groups[1].Value;
+                if (VideoId.TryParse(videoIdStr) is { } videoId)
+                    return videoId;
+            }
+        }
+
+        return null;
     }
 
     public async Task<PlaylistItemDto> AddToPlaylistAsync(string roomHash, AddToPlaylistRequest request, string username)
@@ -63,7 +90,7 @@ public class PlaylistService : IPlaylistService
         }
         else
         {
-            var parsedVideoId = VideoId.TryParse(url);
+            var parsedVideoId = TryParseVideoId(url);
             if (parsedVideoId is null)
                 throw new InvalidOperationException("URL do YouTube inválida.");
 

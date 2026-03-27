@@ -78,7 +78,7 @@ public class PlaylistService : IPlaylistService
             }
             catch (YoutubeExplodeException ex)
             {
-                throw new InvalidOperationException("Não foi possível ler a playlist informada. Verifique se ela é pública e tente novamente.", ex);
+                throw new InvalidOperationException($"Não foi possível ler a playlist informada. Verifique se ela é pública e tente novamente. Detalhes técnicos: {ex.GetType().Name}: {ex.Message}", ex);
             }
 
             foreach (var video in videos)
@@ -115,7 +115,7 @@ public class PlaylistService : IPlaylistService
             }
             catch (YoutubeExplodeException ex)
             {
-                throw new InvalidOperationException("Não foi possível ler esse vídeo do YouTube. Ele pode estar privado, indisponível ou com restrição de idade/região.", ex);
+                throw new InvalidOperationException($"Não foi possível ler esse vídeo do YouTube. Ele pode estar privado, indisponível ou com restrição de idade/região. Detalhes técnicos: {ex.GetType().Name}: {ex.Message}", ex);
             }
 
             var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url

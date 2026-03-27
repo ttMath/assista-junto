@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Net.Http.Json;
 using AssistaJunto.Application.DTOs;
 using AssistaJunto.Application.Interfaces;
 using AssistaJunto.Domain.Interfaces;
@@ -13,12 +14,74 @@ namespace AssistaJunto.Application.Services;
 public class PlaylistService : IPlaylistService
 {
     private readonly IRoomRepository _roomRepository;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly YoutubeClient _youtubeClient;
 
-    public PlaylistService(IRoomRepository roomRepository)
+    public PlaylistService(IRoomRepository roomRepository, IHttpClientFactory httpClientFactory)
     {
         _roomRepository = roomRepository;
+        _httpClientFactory = httpClientFactory;
         _youtubeClient = new YoutubeClient();
+    }
+
+    private static VideoId? TryParseVideoId(string url)
+    {
+        var parsedVideoId = VideoId.TryParse(url);
+        if (parsedVideoId is not null)
+            return parsedVideoId;
+
+        var patterns = new[]
+        {
+            @"(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})",
+            @"youtube\.com\/.*[?&]v=([a-zA-Z0-9_-]{11})"
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var match = Regex.Match(url, pattern);
+            if (match.Success && match.Groups.Count > 1)
+            {
+                var videoIdStr = match.Groups[1].Value;
+                if (VideoId.TryParse(videoIdStr) is { } videoId)
+                    return videoId;
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<YoutubeOEmbedResponse?> TryGetYoutubeOEmbedAsync(string videoId)
+    {
+        var client = _httpClientFactory.CreateClient();
+        var watchUrl = $"https://www.youtube.com/watch?v={videoId}";
+        var oEmbedUrl = $"https://www.youtube.com/oembed?url={Uri.EscapeDataString(watchUrl)}&format=json";
+
+        try
+        {
+            var response = await client.GetAsync(oEmbedUrl);
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            var oEmbed = await response.Content.ReadFromJsonAsync<YoutubeOEmbedResponse>();
+            if (string.IsNullOrWhiteSpace(oEmbed?.Title))
+                return null;
+
+            return oEmbed;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task<(string Title, string ThumbnailUrl)> GetValidatedVideoMetadataAsync(string videoId)
+    {
+        var oEmbed = await TryGetYoutubeOEmbedAsync(videoId);
+        if (oEmbed is null)
+            throw new InvalidOperationException("Não foi possível validar este vídeo no YouTube. Verifique se a URL está correta e se o vídeo é público.");
+
+        var thumbnailUrl = $"https://i.ytimg.com/vi/{videoId}/maxresdefault.jpg";
+        return (oEmbed.Title!, thumbnailUrl);
     }
 
     public async Task<PlaylistItemDto> AddToPlaylistAsync(string roomHash, AddToPlaylistRequest request, string username)
@@ -73,7 +136,7 @@ public class PlaylistService : IPlaylistService
         }
         else
         {
-            var parsedVideoId = VideoId.TryParse(url);
+            var parsedVideoId = TryParseVideoId(url);
             if (parsedVideoId is null)
                 throw new InvalidOperationException("URL do YouTube inválida.");
 
@@ -82,20 +145,28 @@ public class PlaylistService : IPlaylistService
             if (room.HasVideo(videoIdStr))
                 throw new InvalidOperationException("Este vídeo já está na playlist.");
 
-            Video video;
+            var validatedMetadata = await GetValidatedVideoMetadataAsync(videoIdStr);
+
+            var title = validatedMetadata.Title;
+            var thumbnailUrl = validatedMetadata.ThumbnailUrl;
+            string finalVideoId = videoIdStr;
+
             try
             {
-                video = await _youtubeClient.Videos.GetAsync(parsedVideoId.Value);
+                var video = await _youtubeClient.Videos.GetAsync(parsedVideoId.Value);
+                finalVideoId = video.Id;
+                title = string.IsNullOrWhiteSpace(video.Title) ? title : video.Title;
+                thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
+                    ?? thumbnailUrl;
             }
-            catch (YoutubeExplodeException ex)
+            catch (VideoUnavailableException)
             {
-                throw new InvalidOperationException($"Não foi possível ler esse vídeo do YouTube. Ele pode estar privado, indisponível ou com restrição de idade/região. Detalhes técnicos: {ex.GetType().Name}: {ex.Message}", ex);
+            }
+            catch (YoutubeExplodeException)
+            {
             }
 
-            var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
-                ?? $"https://img.youtube.com/vi/{videoIdStr}/mqdefault.jpg";
-
-            var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, username);
+            var item = room.AddToPlaylist(finalVideoId, title, thumbnailUrl, username);
 
             addedItems.Add(new PlaylistItemDto(
                 item.Id, item.VideoId, item.Title, item.ThumbnailUrl,

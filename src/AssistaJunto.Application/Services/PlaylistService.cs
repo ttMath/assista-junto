@@ -21,32 +21,6 @@ public class PlaylistService : IPlaylistService
         _youtubeClient = new YoutubeClient();
     }
 
-    private static VideoId? TryParseVideoId(string url)
-    {
-        var parsedVideoId = VideoId.TryParse(url);
-        if (parsedVideoId is not null)
-            return parsedVideoId;
-
-        var patterns = new[]
-        {
-            @"(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})",  
-            @"youtube\.com\/.*[?&]v=([a-zA-Z0-9_-]{11})"
-        };
-
-        foreach (var pattern in patterns)
-        {
-            var match = Regex.Match(url, pattern);
-            if (match.Success && match.Groups.Count > 1)
-            {
-                var videoIdStr = match.Groups[1].Value;
-                if (VideoId.TryParse(videoIdStr) is { } videoId)
-                    return videoId;
-            }
-        }
-
-        return null;
-    }
-
     public async Task<PlaylistItemDto> AddToPlaylistAsync(string roomHash, AddToPlaylistRequest request, string username)
     {
         var room = await _roomRepository.GetByHashAsync(roomHash)
@@ -99,7 +73,7 @@ public class PlaylistService : IPlaylistService
         }
         else
         {
-            var parsedVideoId = TryParseVideoId(url);
+            var parsedVideoId = VideoId.TryParse(url);
             if (parsedVideoId is null)
                 throw new InvalidOperationException("URL do YouTube inválida.");
 

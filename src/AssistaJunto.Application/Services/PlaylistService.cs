@@ -4,6 +4,7 @@ using AssistaJunto.Application.Interfaces;
 using AssistaJunto.Domain.Interfaces;
 using YoutubeExplode;
 using YoutubeExplode.Common;
+using YoutubeExplode.Exceptions;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 
@@ -70,7 +71,15 @@ public class PlaylistService : IPlaylistService
 
         if (parsedPlaylistId is not null)
         {
-            var videos = await _youtubeClient.Playlists.GetVideosAsync(parsedPlaylistId.Value);
+            IReadOnlyList<PlaylistVideo> videos;
+            try
+            {
+                videos = await _youtubeClient.Playlists.GetVideosAsync(parsedPlaylistId.Value);
+            }
+            catch (YoutubeExplodeException ex)
+            {
+                throw new InvalidOperationException("Não foi possível ler a playlist informada. Verifique se ela é pública e tente novamente.", ex);
+            }
 
             foreach (var video in videos)
             {
@@ -99,7 +108,16 @@ public class PlaylistService : IPlaylistService
             if (room.HasVideo(videoIdStr))
                 throw new InvalidOperationException("Este vídeo já está na playlist.");
 
-            var video = await _youtubeClient.Videos.GetAsync(parsedVideoId.Value);
+            Video video;
+            try
+            {
+                video = await _youtubeClient.Videos.GetAsync(parsedVideoId.Value);
+            }
+            catch (YoutubeExplodeException ex)
+            {
+                throw new InvalidOperationException("Não foi possível ler esse vídeo do YouTube. Ele pode estar privado, indisponível ou com restrição de idade/região.", ex);
+            }
+
             var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
                 ?? $"https://img.youtube.com/vi/{videoIdStr}/mqdefault.jpg";
 

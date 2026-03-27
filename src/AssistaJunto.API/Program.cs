@@ -11,6 +11,74 @@ DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+static string? NormalizeOrigin(string? origin)
+{
+    if (string.IsNullOrWhiteSpace(origin))
+        return null;
+
+    origin = origin.Trim().TrimEnd('/');
+
+    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+        return null;
+
+    var portPart = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
+    return $"{uri.Scheme}://{uri.Host}{portPart}";
+}
+
+static IEnumerable<string> ExpandWwwVariants(string origin)
+{
+    yield return origin;
+
+    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+        yield break;
+
+    if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+        Uri.CheckHostName(uri.Host) == UriHostNameType.IPv4 ||
+        Uri.CheckHostName(uri.Host) == UriHostNameType.IPv6)
+        yield break;
+
+    var alternativeHost = uri.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+        ? uri.Host[4..]
+        : $"www.{uri.Host}";
+
+    var portPart = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
+    yield return $"{uri.Scheme}://{alternativeHost}{portPart}";
+}
+
+static List<string> BuildAllowedOrigins(IConfiguration configuration)
+{
+    var configuredOrigins = new List<string>();
+
+    var clientUrl = configuration["ClientUrl"];
+    if (!string.IsNullOrWhiteSpace(clientUrl))
+        configuredOrigins.Add(clientUrl);
+
+    var zeroTierClientUrl = configuration["ZeroTier:ClientUrl"];
+    if (!string.IsNullOrWhiteSpace(zeroTierClientUrl))
+        configuredOrigins.Add(zeroTierClientUrl);
+
+    var extraOrigins = configuration["Cors:AllowedOrigins"];
+    if (!string.IsNullOrWhiteSpace(extraOrigins))
+    {
+        configuredOrigins.AddRange(extraOrigins
+            .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    }
+
+    var allowedOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    foreach (var configuredOrigin in configuredOrigins)
+    {
+        var normalized = NormalizeOrigin(configuredOrigin);
+        if (normalized is null)
+            continue;
+
+        foreach (var expanded in ExpandWwwVariants(normalized))
+            allowedOrigins.Add(expanded);
+    }
+
+    return [.. allowedOrigins];
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -32,11 +100,9 @@ builder.Services.AddSignalR(options =>
         options.EnableDetailedErrors = true;
 });
 
-var clientUrl = builder.Configuration["ClientUrl"] ?? throw new InvalidOperationException("ClientUrl not configured. Set it in .env");
-var allowedOrigins = new List<string> { clientUrl };
-var zeroTierClientUrl = builder.Configuration["ZeroTier:ClientUrl"];
-if (!string.IsNullOrWhiteSpace(zeroTierClientUrl))
-    allowedOrigins.Add(zeroTierClientUrl);
+var allowedOrigins = BuildAllowedOrigins(builder.Configuration);
+if (allowedOrigins.Count == 0)
+    throw new InvalidOperationException("No valid CORS origins configured. Set ClientUrl and/or Cors:AllowedOrigins.");
 
 builder.Services.AddCors(options =>
 {

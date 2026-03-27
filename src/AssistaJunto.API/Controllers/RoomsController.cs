@@ -66,16 +66,27 @@ public class RoomsController : ControllerBase
     [HttpPost("{hash}/playlist/from-url")]
     public async Task<IActionResult> AddPlaylistByUrl(string hash, [FromBody] AddPlaylistByUrlRequest request)
     {
-        var username = GetUsername();
-        if (username is null) return BadRequest("Header X-Username é obrigatório.");
-        var result = await _playlistService.AddPlaylistByUrlAsync(hash, request.Url, username);
-
-        foreach (var item in result.Items)
+        try
         {
-            await _hubContext.Clients.Group(hash).SendAsync("PlaylistUpdated", item);
-        }
+            var username = GetUsername();
+            if (username is null) return BadRequest("Header X-Username é obrigatório.");
+            var result = await _playlistService.AddPlaylistByUrlAsync(hash, request.Url, username);
 
-        return Ok(result);
+            foreach (var item in result.Items)
+            {
+                await _hubContext.Clients.Group(hash).SendAsync("PlaylistUpdated", item);
+            }
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "Não foi possível consultar o YouTube no momento." });
+        }
     }
 
     [HttpDelete("{hash}/playlist/{itemId:guid}")]

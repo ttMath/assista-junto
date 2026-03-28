@@ -1,20 +1,27 @@
 ﻿.chat-wrapper {
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(129, 140, 208, 0.25);
+    background: rgba(8, 11, 24, 0.86);
     display: flex;
     flex-direction: column;
-    height: 583px;
+    height: 100%;
+    min-height: 420px;
+    max-height: 100%;
 }
 
 .chat-header {
-    background-color: #2b2d31;
+    background: linear-gradient(90deg, rgba(18, 22, 43, 0.9), rgba(9, 12, 25, 0.9));
+    border-bottom: 1px solid rgba(126, 138, 205, 0.22);
     flex: 0 0 auto;
 }
 
 .chat-messages-area {
     flex: 1 1 auto;
+    min-height: 180px;
+    max-height: 320px;
     overflow-y: auto;
     scrollbar-width: thin;
     scroll-behavior: smooth;
+    background: rgba(5, 7, 17, 0.56);
 }
 
     .chat-messages-area::-webkit-scrollbar {
@@ -22,35 +29,63 @@
     }
 
     .chat-messages-area::-webkit-scrollbar-thumb {
-        background-color: #cccccc;
+        background-color: rgba(137, 149, 222, 0.45);
         border-radius: 10px;
     }
 
 .message-item {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #f0f0f0;
+    background-color: rgba(16, 19, 34, 0.6);
+    border-bottom: 1px solid rgba(122, 134, 204, 0.12);
     transition: background-color 0.15s;
 }
 
     .message-item:nth-child(even) {
-        background-color: #ffffff;
+        background-color: rgba(12, 15, 27, 0.66);
     }
 
     .message-item:hover {
-        background-color: #f1f3f5;
+        background-color: rgba(20, 24, 43, 0.9);
     }
 
 .message-body {
     font-size: 0.85rem;
     line-height: 1.4;
     word-break: break-word;
-    color: #333 !important;
+    color: #edf0ff;
 }
 
 .chat-input-area {
     flex: 0 0 auto;
+    background: rgba(8, 11, 24, 0.96);
 }
 
-    .chat-input-area .form-control:focus {
-        border-color: #5865F2;
-    }
+.chat-input {
+    border-color: rgba(118, 131, 214, 0.34);
+    background: rgba(20, 25, 46, 0.72);
+    color: #f6f7ff;
+}
+
+.chat-input::placeholder {
+    color: #8f99c4;
+}
+
+.chat-input:focus {
+    background: rgba(24, 31, 58, 0.88);
+    border-color: rgba(106, 120, 240, 0.72);
+    color: #fff;
+    box-shadow: 0 0 0 0.2rem rgba(106, 120, 240, 0.16);
+}
+
+.send-btn {
+    border: 0;
+    background: linear-gradient(130deg, #6f7bff, #4e5dff);
+}
+
+.sender-name {
+    font-size: 0.85rem;
+    color: #9da8ff;
+}
+
+.sent-time {
+    font-size: 0.65rem;
+}

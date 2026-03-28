@@ -33,13 +33,12 @@ else if (!AuthState.IsAuthenticated)
 
                 <div class="d-flex justify-content-center">
                     <div class="d-flex flex-column align-items-center gap-3" style="min-width: 320px;">
-                        <input type="text" class="form-control form-control-lg text-center"
+                        <input type="text" class="form-control form-control-lg text-center name-entry-input"
                                placeholder="Digite seu nome..."
                                @bind="_nameInput"
                                @onkeydown="OnNameKeyDown"
-                               maxlength="30"
-                               style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white;" />
-                        <button class="btn btn-lg btn-primary px-5 fw-bold" @onclick="SubmitName" disabled="@string.IsNullOrWhiteSpace(_nameInput)">
+                               maxlength="30" />
+                        <button class="btn btn-lg btn-primary px-5 fw-bold name-entry-button" @onclick="SubmitName" disabled="@string.IsNullOrWhiteSpace(_nameInput)">
                             ENTRAR
                         </button>
                     </div>
@@ -54,42 +53,46 @@ else if (!AuthState.IsAuthenticated)
 }
 else
 {
-    <div class="container py-5">
-        <header class="d-flex justify-content-between align-items-end mb-5">
-            <h1 class="fw-bold text-white mb-0">LOBBY</h1>
-            <button class="btn btn-success px-4 py-2 fw-bold border-0"
-                    style="background-color: #1b6ec2;"
-                    @onclick="PrepareNewRoom">
-                + NOVA SALA
-            </button>
-        </header>
-
-        @if (_rooms is null)
-        {
-            <div class="text-center py-5 text-muted">Buscando salas...</div>
-        }
-        else if (_rooms.Count == 0)
-        {
-            <EmptyState OnCreateClick="PrepareNewRoom" />
-        }
-        else
-        {
-            <div class="row g-4">
-                @foreach (var room in _rooms)
-                {
-                    <Roomcard RoomName="@room.Name"
-                              OwnerName="@room.OwnerDisplayName"
-                              IsUserOwner="@(room.OwnerDisplayName == AuthState.Username)"
-                              VideoCount="@room.Playlist.Count"
-                              HasPassword="@room.HasPassword"
-                              OnDelete="() => ConfirmDeleteRoom(room.Hash)"
-                              OnJoin="() => EnterRoom(room)"
-                              Hash="@room.Hash" 
-                              UserCount="@room.UsersCount"/>
-                }
+    <section class="lobby-shell">
+        <div class="container py-4 py-lg-5">
+            <div class="lobby-hero mb-4 mb-lg-5">
+                <div>
+                    <p class="lobby-eyebrow mb-2">ASSISTA JUNTO</p>
+                    <h1 class="fw-black text-white mb-2">Lobby da Comunidade</h1>
+                    <p class="text-muted mb-0">Entre em uma sala ativa ou crie uma nova sessão sincronizada.</p>
+                </div>
+                <button class="btn btn-primary btn-create-room" @onclick="PrepareNewRoom">
+                    + Nova Sala
+                </button>
             </div>
-        }
-    </div>
+
+            @if (_rooms is null)
+            {
+                <div class="lobby-loading text-center py-5 text-muted">Buscando salas...</div>
+            }
+            else if (_rooms.Count == 0)
+            {
+                <EmptyState OnCreateClick="PrepareNewRoom" />
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var room in _rooms)
+                    {
+                        <Roomcard RoomName="@room.Name"
+                                  OwnerName="@room.OwnerDisplayName"
+                                  IsUserOwner="@(room.OwnerDisplayName == AuthState.Username)"
+                                  VideoCount="@room.Playlist.Count"
+                                  HasPassword="@room.HasPassword"
+                                  OnDelete="() => ConfirmDeleteRoom(room.Hash)"
+                                  OnJoin="() => EnterRoom(room)"
+                                  Hash="@room.Hash"
+                                  UserCount="@room.UsersCount" />
+                    }
+                </div>
+            }
+        </div>
+    </section>
 
     @if (_showCreateModal)
     {

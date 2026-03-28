@@ -2,11 +2,16 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    background: #05060f;
 }
 
 .top-bar {
-    background-color: #1a1a2e;
-    border-bottom: 2px solid #5c2d91;
+    position: sticky;
+    top: 0;
+    z-index: 1040;
+    backdrop-filter: blur(14px);
+    background: linear-gradient(90deg, rgba(9, 12, 27, 0.92), rgba(7, 8, 18, 0.82));
+    border-bottom: 1px solid rgba(133, 144, 204, 0.24);
 }
 
 .content-area {
@@ -17,11 +22,16 @@
 .home-btn {
     background: transparent;
     border: none;
+    transition: opacity 0.2s ease;
+}
+
+.home-btn:hover {
+    opacity: 0.9;
 }
 
 .user-name-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     color: #f2f3f5;
     border-radius: 20px;
     padding: 4px 14px 4px 6px;
@@ -44,7 +54,7 @@
     }
 
 .edit-name-input {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
     border-radius: 6px;
@@ -54,7 +64,15 @@
 
     .edit-name-input:focus {
         background: rgba(255, 255, 255, 0.15);
-        border-color: #5865F2;
+        border-color: #6f7bff;
         color: white;
-        box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.3);
+        box-shadow: 0 0 0 2px rgba(111, 123, 255, 0.28);
     }
+
+.btn-logout {
+    border-color: rgba(255, 255, 255, 0.34);
+}
+
+.btn-logout:hover {
+    background: rgba(255, 255, 255, 0.14);
+}

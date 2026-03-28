@@ -1,29 +1,30 @@
-﻿.bg-surface {
-    background-color: #0a0a0a;
-    transition: background 0.2s;
+﻿.room-card {
+    border: 1px solid rgba(126, 137, 212, 0.26);
+    background: linear-gradient(165deg, rgba(13, 17, 33, 0.92), rgba(9, 11, 22, 0.92));
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.room-card:hover .bg-surface {
-    background-color: #121212;
+.room-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(145, 156, 255, 0.6);
+    box-shadow: 0 18px 30px rgba(8, 11, 35, 0.56);
 }
 
-.room-card {
-    transition: transform 0.3s, border-color 0.3s;
-    background-color: #0a0a0a;
+.room-card-surface {
+    background: transparent;
 }
 
-    .room-card:hover {
-        transform: translateY(-5px);
-        border-color: #5865F2 !important;
-    }
+.room-title {
+    max-width: 85%;
+}
 
 .badge-custom {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(79, 92, 255, 0.12);
+    border: 1px solid rgba(127, 139, 223, 0.34);
     padding: 4px 10px;
-    border-radius: 6px;
+    border-radius: 999px;
     font-size: 0.75rem;
-    color: #b0b0b0;
+    color: #dae0ff;
 }
 
 .action-container {
@@ -61,4 +62,14 @@
 .lock-icon {
     font-size: 1.1rem;
     filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+}
+
+.room-enter-btn {
+    border: 0;
+    background: linear-gradient(140deg, #6f7bff, #4d5bff);
+    box-shadow: 0 10px 20px rgba(63, 77, 206, 0.35);
+}
+
+.room-enter-btn:hover {
+    filter: brightness(1.04);
 }

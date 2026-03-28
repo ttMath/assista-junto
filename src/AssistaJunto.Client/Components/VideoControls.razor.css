@@ -1,9 +1,10 @@
 ﻿.controls-pill {
-    background: #111214;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(10, 13, 29, 0.85);
+    border: 1px solid rgba(130, 142, 214, 0.28);
     border-radius: 500px;
-    width: fit-content;
-    margin: 20px auto;
+    width: 100%;
+    justify-content: center;
+    margin: 16px auto 0;
     user-select: none;
 }
 
@@ -18,7 +19,7 @@
     height: 48px;
     border-radius: 50%;
     border: none;
-    background: #5865F2;
+    background: linear-gradient(135deg, #6f7bff, #4f5dff);
     color: white;
     display: flex;
     align-items: center;
@@ -39,7 +40,7 @@
 
 .btn-play-pause:hover {
     transform: scale(1.08);
-    background: #4752C4;
+    background: linear-gradient(135deg, #7c88ff, #5a68ff);
     box-shadow: 0 0 25px rgba(88, 101, 242, 0.6);
 }
 
@@ -109,6 +110,18 @@
 .volume-label {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #5865f2;
+    color: #9ca7ff;
     width: 32px;
+}
+
+@media (max-width: 576px) {
+    .controls-pill {
+        border-radius: 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .v-divider {
+        display: none;
+    }
 }

@@ -1,5 +1,5 @@
 ﻿<div class="col-12 col-md-6 col-lg-4">
-    <div class="room-card h-100 d-flex flex-column border position-relative border-secondary rounded-4 overflow-hidden">
+    <div class="room-card h-100 d-flex flex-column position-relative rounded-4 overflow-hidden">
         <div class="action-container">
             @if (HasPassword)
             {
@@ -12,9 +12,9 @@
                 </button>
             }
         </div>
-        <div class="card-body p-4 bg-surface text-white">
+        <div class="card-body p-4 room-card-surface text-white">
             <div class=" mb-3">
-                <h4 class="fw-bold mb-0 text-truncate" style="max-width: 85%;">@RoomName</h4>
+                <h4 class="fw-bold mb-0 text-truncate room-title">@RoomName</h4>
             </div>
 
             <div class="d-flex align-items-center mb-4">
@@ -26,13 +26,13 @@
                 </p>
             </div>
 
-            <div class="d-flex gap-2 fw-bold">
+            <div class="d-flex gap-2 fw-bold flex-wrap">
                 <span class="badge-custom">🎬 @VideoCount vídeos</span>
                 <span class="badge-custom">👥 @GetUserCountText()</span>
             </div>
         </div>
-        <div class="p-4 pt-0 bg-surface">
-            <button class="btn btn-primary w-100 py-2 fw-bold text-uppercase" @onclick="OnJoin">
+        <div class="p-4 pt-0 room-card-surface">
+            <button class="btn btn-primary room-enter-btn w-100 py-2 fw-bold text-uppercase" @onclick="OnJoin">
                 Entrar na Sala
             </button>
         </div>

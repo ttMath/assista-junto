@@ -1,0 +1,25 @@
+.modal-overlay {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+}
+
+.create-room-modal {
+    background: linear-gradient(165deg, rgba(12, 16, 33, 0.96), rgba(10, 12, 22, 0.96));
+    border: 1px solid rgba(126, 138, 212, 0.35);
+}
+
+.modal-input {
+    background: rgba(18, 23, 43, 0.84);
+    border-color: rgba(117, 130, 209, 0.35);
+}
+
+.modal-input::placeholder {
+    color: #8f99c4;
+}
+
+.modal-input:focus {
+    background: rgba(22, 29, 53, 0.95);
+    border-color: rgba(112, 124, 255, 0.7);
+    color: #fff;
+    box-shadow: 0 0 0 0.2rem rgba(112, 124, 255, 0.16);
+}

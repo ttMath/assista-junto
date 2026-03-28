@@ -78,10 +78,13 @@ public class RoomService : IRoomService
         await _roomRepository.UpdateAsync(room);
     }
 
-    public async Task UpdatePlaybackProgressAsync(string hash, double currentTime)
+    public async Task UpdatePlaybackProgressAsync(string hash, double currentTime, int? expectedIndex = null)
     {
         var room = await _roomRepository.GetByHashAsync(hash)
             ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        if (expectedIndex.HasValue && room.CurrentVideoIndex != expectedIndex.Value)
+            return;
 
         room.UpdatePlayerState(room.CurrentVideoIndex, currentTime, room.IsPlaying);
         await _roomRepository.UpdateAsync(room);

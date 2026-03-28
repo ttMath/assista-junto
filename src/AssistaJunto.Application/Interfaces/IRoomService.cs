@@ -11,7 +11,7 @@ public interface IRoomService
     Task<RoomStateDto?> GetRoomStateAsync(string hash);
     Task<bool> JoinRoomAsync(string hash, string? password);
     Task UpdatePlayerStateAsync(string hash, double currentTime, bool isPlaying);
-    Task UpdatePlaybackProgressAsync(string hash, double currentTime);
+    Task UpdatePlaybackProgressAsync(string hash, double currentTime, int? expectedIndex = null);
     Task<bool> NextVideoAsync(string hash, int? expectedIndex = null);
     Task<bool> PreviousVideoAsync(string hash, int? expectedIndex = null);
     Task<bool> JumpToVideoAsync(string hash, int videoIndex);

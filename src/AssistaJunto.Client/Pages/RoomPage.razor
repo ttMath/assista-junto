@@ -293,7 +293,7 @@ else
                 {
                     var time = await JS.InvokeAsync<double>("youtubePlayer.getCurrentTime");
                     _currentPlaybackTime = time;
-                    await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 0, SeekTime = time });
+                    await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 0, SeekTime = time, ExpectedIndex = _currentVideoIndex });
                 }
                 break;
 
@@ -303,7 +303,7 @@ else
                 {
                     var time = await JS.InvokeAsync<double>("youtubePlayer.getCurrentTime");
                     _currentPlaybackTime = time;
-                    await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 1, SeekTime = time });
+                    await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 1, SeekTime = time, ExpectedIndex = _currentVideoIndex });
                 }
                 break;
         }
@@ -317,7 +317,7 @@ else
         _currentPlaybackTime = seekTime;
         if (!IsRemoteCooldown)
         {
-            await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 2, SeekTime = seekTime });
+            await Hub.SendPlayerActionAsync(RoomHash, new PlayerActionModel { Action = 2, SeekTime = seekTime, ExpectedIndex = _currentVideoIndex });
         }
     }
 
@@ -638,7 +638,7 @@ else
 
                 var currentTime = await JS.InvokeAsync<double>("youtubePlayer.getCurrentTime", cancellationToken);
                 _currentPlaybackTime = currentTime;
-                await Hub.ReportPlaybackProgressAsync(RoomHash, currentTime);
+                await Hub.ReportPlaybackProgressAsync(RoomHash, currentTime, _currentVideoIndex);
             }
         }
         catch (OperationCanceledException)

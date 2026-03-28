@@ -107,10 +107,10 @@ public class RoomHubService : IAsyncDisposable
             await _hubConnection.InvokeAsync("JumpToVideo", roomHash, videoIndex);
     }
 
-    public async Task ReportPlaybackProgressAsync(string roomHash, double currentTime)
+    public async Task ReportPlaybackProgressAsync(string roomHash, double currentTime, int? expectedIndex)
     {
         if (_hubConnection is not null)
-            await _hubConnection.InvokeAsync("ReportPlaybackProgress", roomHash, currentTime);
+            await _hubConnection.InvokeAsync("ReportPlaybackProgress", roomHash, currentTime, expectedIndex);
     }
 
     public async ValueTask DisposeAsync()

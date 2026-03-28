@@ -152,7 +152,7 @@ public class RoomHub : Hub
                     await _roomService.UpdatePlayerStateAsync(roomHash, action.SeekTime ?? 0, false);
                     break;
                 case PlayerAction.SeekTo:
-                    await _roomService.UpdatePlaybackProgressAsync(roomHash, action.SeekTime ?? 0);
+                    await _roomService.UpdatePlaybackProgressAsync(roomHash, action.SeekTime ?? 0, action.ExpectedIndex);
                     break;
                 case PlayerAction.NextVideo:
                     await _roomService.NextVideoAsync(roomHash, action.ExpectedIndex);
@@ -170,9 +170,9 @@ public class RoomHub : Hub
         }
     }
 
-    public async Task ReportPlaybackProgress(string roomHash, double currentTime)
+    public async Task ReportPlaybackProgress(string roomHash, double currentTime, int? expectedIndex)
     {
-        await _roomService.UpdatePlaybackProgressAsync(roomHash, currentTime);
+        await _roomService.UpdatePlaybackProgressAsync(roomHash, currentTime, expectedIndex);
     }
 
     public async Task SendChatMessage(string roomHash, string content)

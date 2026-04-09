@@ -1,64 +1,80 @@
 <div align="center">
-  <img src="https://img.shields.io/badge/.NET-purple?style=for-the-badge">
-  <img src="https://img.shields.io/badge/postgreSQL-blue?style=for-the-badge">
-  <img src="https://img.shields.io/badge/bootstrap-magenta?style=for-the-badge">
-  <img src="https://img.shields.io/badge/blazor-4c078c?style=for-the-badge">
-  <img src="https://img.shields.io/badge/entity framework-darkblue?style=for-the-badge">
-  <img src="https://img.shields.io/badge/signalr-lightgray?style=for-the-badge">
-<br><br>
-<img src="https://i.imgur.com/72zHxbK.jpg" alt="Project Flow: Discord, YouTube, and Group Synchronization" width="65%">
-<br><br>  
+  <img src="https://img.shields.io/badge/.NET-10-purple?style=for-the-badge" alt=".NET 10">
+  <img src="https://img.shields.io/badge/PostgreSQL-blue?style=for-the-badge" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Blazor-4c078c?style=for-the-badge" alt="Blazor">
+  <img src="https://img.shields.io/badge/SignalR-lightgray?style=for-the-badge" alt="SignalR">
+  <img src="https://img.shields.io/badge/EF%20Core-darkblue?style=for-the-badge" alt="EF Core">
+  <img src="https://img.shields.io/badge/Bootstrap-magenta?style=for-the-badge" alt="Bootstrap">
+  <br><br>
+  <img src="https://i.imgur.com/wjX5t5x.png" alt="Discord, YouTube, and Group Synchronization" width="40%">
 
-# JAÇA CITY - WATCH PARTY
+  # JAÇA CITY - WATCH PARTY
 
-**Uma plataforma web aberta para assistir vídeos do YouTube em grupo, integrada ao Discord.**
-
+  **Plataforma web para assistir vídeos do YouTube em grupo, com sincronização em tempo real e integração com Discord.**
 </div>
 
 ---
 
-## 🚀 Sobre o Projeto
+## 🌐 Acesse
 
-Este projeto nasceu da motivação de criar uma plataforma de "Watch Party" **sem limitações** e totalmente gratuita. Ao utilizar a autenticação do Discord, unimos a conveniência de uma das ferramentas mais usadas por desenvolvedores com uma experiência de entretenimento fluida.
-
-A plataforma permite que usuários criem salas onde a reprodução do vídeo é **sincronizada automaticamente** entre todos os participantes, permitindo que todos assistam ao mesmo frame ao mesmo tempo.
-
-### Principais Funcionalidades
-
-* **Login via Discord:** Integração nativa para autenticação rápida.
-* **Sincronização em Tempo Real:** Play, Pause e Seek sincronizados para todos na sala.
-* **Chat Integrado:** Troca de mensagens instantâneas dentro de cada sala.
-* **Controle de Playlist:** Adicione vídeos do YouTube de forma simples e organizada.
+- **Domínio oficial:** [www.assistajunto.com.br](https://www.assistajunto.com.br)
 
 ---
 
-## 🛠️ Stack Tecnológica
+## 🚀 Sobre o projeto
+
+O `AssistaJunto` foi criado para oferecer uma experiência de watch party simples, gratuita e aberta. A proposta é permitir que grupos assistam ao mesmo conteúdo simultaneamente, com reprodução sincronizada e interação em tempo real.
+
+Com autenticação via Discord e integração com YouTube, a plataforma facilita criar salas, convidar pessoas e acompanhar o vídeo no mesmo timing.
+
+---
+
+## ✨ Funcionalidades principais
+
+- **Login com Discord** para acesso rápido.
+- **Bot privado no Discord** para integração com o ecossistema da aplicação.
+- **Sincronização em tempo real** de `Play`, `Pause` e `Seek` para todos na sala.
+- **Playlist colaborativa** com links do YouTube (vídeos e playlists).
+- **Chat em sala** para comunicação instantânea entre participantes.
+- **Remoção automática de salas inativas** após **5 minutos sem atividade**.
+
+---
+
+## 🛠️ Stack tecnológica
 
 | Camada | Tecnologia | Descrição |
 | --- | --- | --- |
-| **Back-end** | **.NET** | API robusta e escalável. |
-| **Real-time** | **SignalR** | Gerenciamento de WebSockets para sincronização e chat. |
-| **Front-end** | **Blazor & Bootstrap** | Interface interativa com C# no browser e design responsivo. |
-| **Banco de Dados** | **PostgreSQL** | Persistência de dados relacional. |
-| **ORM** | **EF Core** | Mapeamento de entidades para o banco de dados. |
+| Back-end | .NET 10 | API e serviços de aplicação |
+| Front-end | Blazor WebAssembly + Bootstrap | Interface web responsiva |
+| Real-time | SignalR | Sincronização de player e chat em tempo real |
+| Persistência | PostgreSQL | Banco de dados relacional |
+| ORM | Entity Framework Core | Acesso e mapeamento de dados |
 
 ---
 
-## 👷 Autores
+## 🧭 Como funciona
 
-Este projeto é desenvolvido e mantido por:
+1. Usuário entra via Discord.
+2. Cria ou entra em uma sala.
+3. Adiciona um link do YouTube na playlist.
+4. A sala sincroniza a reprodução para todos os participantes.
+5. Sem atividade por 5 minutos, a sala é removida automaticamente.
+
+---
+
+## 👥 Autores
 
 | Nome | Função |
 | --- | --- |
 | [@MWillian](https://github.com/MWillian) | Full Stack Developer |
-| [@ttMath](https://github.com/ttMath) | Full Stack Developer |
+| [@ttMath](https://github.com/ttMath) | Full Stack Developer |
 
 ---
 
-## 🛤️ Roadmap / Futuro
+## 🛤️ Roadmap
 
-* [ ] Implementação de infraestrutura em nuvem.
-* [ ] Sistema de "Host" (apenas o dono da sala controla o player).
-* [ ] Histórico de vídeos assistidos por sala.
+- [ ] Infraestrutura em nuvem.
+- [ ] Sistema de host (controle prioritário do dono da sala).
+- [ ] Histórico de vídeos assistidos por sala.
 
 ---

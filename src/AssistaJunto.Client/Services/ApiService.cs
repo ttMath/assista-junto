@@ -17,8 +17,9 @@ public class ApiService
     private void SetUsername()
     {
         _httpClient.DefaultRequestHeaders.Remove("X-Username");
-        if (_authState.Username is not null)
-            _httpClient.DefaultRequestHeaders.Add("X-Username", _authState.Username);
+        var username = _authState.Username;
+        if (!string.IsNullOrWhiteSpace(username))
+            _httpClient.DefaultRequestHeaders.Add("X-Username", Uri.EscapeDataString(username));
     }
 
     public async Task<List<RoomModel>> GetActiveRoomsAsync()

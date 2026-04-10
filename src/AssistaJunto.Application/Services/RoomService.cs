@@ -18,9 +18,17 @@ public class RoomService : IRoomService
     public async Task<RoomDto> CreateRoomAsync(CreateRoomRequest request, string username)
     {
         var activeRooms = await _roomRepository.GetActiveRoomsAsync();
-        var ownerActiveRooms = activeRooms.Count(r => string.Equals(r.OwnerName, username, StringComparison.OrdinalIgnoreCase));
+        var ownerActiveRooms = activeRooms.Count(r => string.Equals(r.OwnerName, username, StringComparison.OrdinalIgnoreCase)); //busca todas as salas que tem o dono com o mesmo username do usuário atual.
         if (ownerActiveRooms >= MaxActiveRoomsPerOwner)
             throw new InvalidOperationException($"Limite de {MaxActiveRoomsPerOwner} salas ativas por usuário atingido.");
+
+        var normalizedRoomName = request.Name.Trim();
+        var hasDuplicateRoomNameForOwner = activeRooms.Any(r =>
+            string.Equals(r.OwnerName, username, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(r.Name, normalizedRoomName, StringComparison.OrdinalIgnoreCase));
+
+        if (hasDuplicateRoomNameForOwner)
+            throw new InvalidOperationException("Você já possui uma sala ativa com este nome.");
 
         var room = new Room(request.Name, username, request.Password);
         await _roomRepository.AddAsync(room);

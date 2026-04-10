@@ -27,8 +27,14 @@
 {
     <NamePromptModal OnConfirm="OnNameSubmitted" />
 }
-else if (_room is null)
+else if (_showPasswordModal)
 {
+    <PasswordModal @bind-Password="_joinPassword"
+                   ShowError="_passwordError"
+                   OnClose='() => Nav.NavigateTo("/")'
+                   OnConfirm="SubmitPassword" />
+}
+else if (_room is null){
     <div class="d-flex flex-column justify-content-center align-items-center vh-100 bg-black">
         <div class="spinner-border text-primary mb-3"></div>
         <p class="text-muted text-uppercase fw-bold small">Sincronizando com a sala...</p>
@@ -181,6 +187,10 @@ else
     private bool _playerReady;
     private bool _isAddingVideos;
     private bool _showNamePrompt;
+    private bool _showPasswordModal;
+    private bool _passwordError;
+    private string? _joinPassword;
+    private RoomModel? _pendingRoom;
     private DotNetObjectReference<RoomPage>? _dotNetRef;
     private ElementReference _chatContainer;
     private SocialTab _activeSocialTab = SocialTab.Chat;
@@ -232,17 +242,33 @@ else
 
     private async Task JoinRoomAsync()
     {
-        _room = await Api.GetRoomAsync(RoomHash);
-        if (_room is null)
+        var room = await Api.GetRoomAsync(RoomHash);
+        if (room is null)
         {
             Nav.NavigateTo("/");
             return;
         }
 
-        _playlist = _room.Playlist;
-        _currentVideoIndex = _room.CurrentVideoIndex;
-        _isPlaying = _room.IsPlaying;
-        _currentPlaybackTime = _room.CurrentTime;
+        var isOwner = string.Equals(room.OwnerDisplayName, AuthState.Username, StringComparison.OrdinalIgnoreCase);
+        if (room.HasPassword && !isOwner)
+        {
+            _pendingRoom = room;
+            _showPasswordModal = true;
+            _passwordError = false;
+            _joinPassword = null;
+            return;
+        }
+
+        await CompleteRoomJoinAsync(room);
+    }
+
+    private async Task CompleteRoomJoinAsync(RoomModel room, RoomStateModel? state = null)
+    {
+        _room = room;
+        _playlist = state?.Playlist ?? room.Playlist;
+        _currentVideoIndex = state?.CurrentVideoIndex ?? room.CurrentVideoIndex;
+        _isPlaying = state?.IsPlaying ?? room.IsPlaying;
+        _currentPlaybackTime = state?.CurrentTime ?? room.CurrentTime;
 
         Hub.OnRoomStateReceived += OnRoomState;
         Hub.OnPlayerActionReceived += OnPlayerAction;
@@ -257,6 +283,26 @@ else
         await Hub.ConnectAsync();
         await Hub.JoinRoomAsync(RoomHash);
         StartProgressSync();
+    }
+
+    private async Task SubmitPassword()
+    {
+        if (_pendingRoom is null)
+            return;
+
+        var state = await Api.JoinRoomAsync(_pendingRoom.Hash, _joinPassword);
+        if (state is null)
+        {
+            _passwordError = true;
+            return;
+        }
+
+        _showPasswordModal = false;
+        _passwordError = false;
+
+        var room = _pendingRoom;
+        _pendingRoom = null;
+        await CompleteRoomJoinAsync(room, state);
     }
 
     private async Task HandleSendMessage(string message)

@@ -5,12 +5,6 @@
             {
                 <span class="lock-icon" title="Sala Privada">🔒</span>
             }
-            @if (IsUserOwner)
-            {
-                <button class="btn-delete-action" @onclick="HandleDelete" @onclick:stopPropagation="true" title="Eliminar Sala">
-                    <i class="btn-close btn-close-white" style="font-size: 0.8rem;"></i>
-                </button>
-            }
         </div>
         <div class="card-body p-4 room-card-surface text-white">
             <div class=" mb-3">
@@ -47,13 +41,7 @@
     [Parameter] public EventCallback OnJoin { get; set; }
     [Parameter] public EventCallback<string> OnDelete { get; set; }
     [Parameter] public string Hash { get; set; } = "";
-    [Parameter] public bool IsUserOwner { get; set; }
     [Parameter] public int UserCount { get; set; }
-    private async Task HandleDelete()
-    {
-        await OnDelete.InvokeAsync();
-    }
-
     private string GetUserCountText()
     {
         return UserCount == 0 ? "0 usuários" : $"{UserCount} usuários";

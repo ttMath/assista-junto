@@ -149,10 +149,19 @@ public class RoomsController : ControllerBase
 
     private string? GetUsername()
     {
-        var username = Request.Headers["X-Username"].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(username)) return null;
+        var raw = Request.Headers["X-Username"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(raw)) return null;
 
-        username = username.Trim();
+        string username;
+        try
+        {
+            username = Uri.UnescapeDataString(raw).Trim();
+        }
+        catch
+        {
+            return null;
+        }
+        if (string.IsNullOrWhiteSpace(username)) return null;
         return username.Length > 50 ? null : username;
     }
 }

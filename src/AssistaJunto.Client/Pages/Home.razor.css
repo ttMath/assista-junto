@@ -12,16 +12,16 @@
     color: #f5f7ff;
 }
 
-.name-entry-input::placeholder {
-    color: #b9c2e7;
-}
+    .name-entry-input::placeholder {
+        color: #b9c2e7;
+    }
 
-.name-entry-input:focus {
-    background: rgba(20, 25, 50, 0.92);
-    border-color: rgba(144, 154, 255, 0.9);
-    color: #fff;
-    box-shadow: 0 0 0 0.2rem rgba(111, 123, 255, 0.2);
-}
+    .name-entry-input:focus {
+        background: rgba(20, 25, 50, 0.92);
+        border-color: rgba(144, 154, 255, 0.9);
+        color: #fff;
+        box-shadow: 0 0 0 0.2rem rgba(111, 123, 255, 0.2);
+    }
 
 .name-entry-button {
     min-width: 180px;
@@ -43,17 +43,17 @@
     color: #c8cfea;
 }
 
-.credits-line a,
-.project-link {
-    color: #9eabff;
-    text-decoration: none;
-    font-weight: 700;
-}
+    .credits-line a,
+    .project-link {
+        color: #9eabff;
+        text-decoration: none;
+        font-weight: 700;
+    }
 
-.credits-line a:hover,
-.project-link:hover {
-    color: #c2cbff;
-}
+        .credits-line a:hover,
+        .project-link:hover {
+            color: #c2cbff;
+        }
 
 .project-link {
     display: inline-flex;
@@ -149,6 +149,15 @@
     animation: spin 1s linear infinite;
 }
 
+.create-room-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%);
+    z-index: 2100;
+    width: min(92vw, 560px);
+}
+
 @keyframes spin {
     to {
         transform: rotate(360deg);
@@ -157,10 +166,7 @@
 
 .lobby-shell {
     min-height: calc(100vh - 64px);
-    background:
-        radial-gradient(circle at 12% 20%, rgba(111, 123, 255, 0.14), transparent 32%),
-        radial-gradient(circle at 88% 0%, rgba(35, 197, 255, 0.14), transparent 34%),
-        #05060f;
+    background: radial-gradient(circle at 12% 20%, rgba(111, 123, 255, 0.14), transparent 32%), radial-gradient(circle at 88% 0%, rgba(35, 197, 255, 0.14), transparent 34%), #05060f;
 }
 
 .lobby-hero {
@@ -194,9 +200,9 @@
     box-shadow: 0 12px 24px rgba(79, 93, 255, 0.3);
 }
 
-.btn-create-room:hover {
-    filter: brightness(1.05);
-}
+    .btn-create-room:hover {
+        filter: brightness(1.05);
+    }
 
 .lobby-loading {
     background: rgba(6, 10, 25, 0.8);

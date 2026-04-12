@@ -54,12 +54,12 @@ else if (!AuthState.IsAuthenticated)
                 </small>
                 <a class="project-link" href="https://github.com/ttMath/assista-junto" target="_blank" rel="noopener noreferrer">
                     <svg class="github-logo" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.01.08-2.11 0 0 .67-.21 2.2.82a7.64 7.64 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.91.08 2.11.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.01.08-2.11 0 0 .67-.21 2.2.82a7.64 7.64 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.91.08 2.11.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
                     </svg>
                 </a>
             </div>
         </div>
-    </div>  
+    </div>
 }
 else
 {
@@ -91,7 +91,6 @@ else
                     {
                         <Roomcard RoomName="@room.Name"
                                   OwnerName="@room.OwnerDisplayName"
-                                  IsUserOwner="@(room.OwnerDisplayName == AuthState.Username)"
                                   VideoCount="@room.Playlist.Count"
                                   HasPassword="@room.HasPassword"
                                   OnDelete="() => ConfirmDeleteRoom(room.Hash)"
@@ -109,35 +108,24 @@ else
         <CreateRoomModal Model="_createModel"
                          OnClose="() => _showCreateModal = false"
                          OnConfirm="CreateRoom" />
-
-        @if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            <div class="fixed-bottom p-4 d-flex justify-content-center">
-                <div class="alert alert-danger shadow">@_errorMessage</div>
-            </div>
-        }
     }
 
-    @if (_showPasswordModal)
+    @if (!string.IsNullOrEmpty(_errorMessage))
     {
-        <PasswordModal @bind-Password="_joinPassword"
-                       ShowError="_passwordError"
-                       OnClose="() => _showPasswordModal = false"
-                       OnConfirm="SubmitPassword" />
+        <div class="create-room-toast fixed-bottom p-4 d-flex justify-content-center">
+            <div class="alert alert-danger shadow">@_errorMessage</div>
+        </div>
     }
+
 }
 
 @code {
     private List<RoomModel>? _rooms;
     private bool _showCreateModal;
-    private bool _showPasswordModal;
-    private bool _passwordError;
     private string? _errorMessage;
 
     private CreateRoomModel _createModel = new();
 
-    private string? _joinPassword;
-    private RoomModel? _pendingRoom;
     private string _nameInput = "";
     private bool _initialized;
     private string? _nameValidationMessage;
@@ -203,15 +191,15 @@ else
         }
         catch (Exception ex)
         {
-            _errorMessage = "Erro 500: O servidor rejeitou os dados. Tente outro nome.";
+            _showCreateModal = false;
+            _errorMessage = "O servidor rejeitou os dados. Tente outro nome.";
             Console.WriteLine(ex.Message);
         }
     }
 
     private void EnterRoom(RoomModel room)
     {
-        if (room.HasPassword) { _pendingRoom = room; _showPasswordModal = true; }
-        else { Nav.NavigateTo($"/sala/{room.Hash}"); }
+        Nav.NavigateTo($"/sala/{room.Hash}");
     }
 
     private async Task ConfirmDeleteRoom(string hash)
@@ -222,12 +210,5 @@ else
             _rooms?.RemoveAll(r => r.Hash == hash);
             StateHasChanged();
         }
-    }
-    private async Task SubmitPassword()
-    {
-        if (_pendingRoom is null) return;
-        var state = await Api.JoinRoomAsync(_pendingRoom.Hash, _joinPassword);
-        if (state is not null) Nav.NavigateTo($"/sala/{_pendingRoom.Hash}");
-        else _passwordError = true;
     }
 }

@@ -32,8 +32,32 @@ public class ApiService
     {
         SetUsername();
         var response = await _httpClient.PostAsJsonAsync("api/rooms", model);
+        if (!response.IsSuccessStatusCode)
+        {
+            var message = await TryGetErrorMessageAsync(response);
+            if (!string.IsNullOrWhiteSpace(message))
+                throw new InvalidOperationException(message);
+        }
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<RoomModel>();
+    }
+
+    private static async Task<string?> TryGetErrorMessageAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            return error?.Message;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private sealed class ApiErrorResponse
+    {
+        public string? Message { get; set; }
     }
 
     public async Task<RoomModel?> GetRoomAsync(string hash)

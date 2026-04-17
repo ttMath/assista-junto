@@ -84,3 +84,14 @@
     background: rgba(114, 15, 33, 0.44);
     border-bottom: 1px solid rgba(255, 128, 157, 0.35);
 }
+
+.modal-overlay {
+    background: rgba(4, 6, 14, 0.78);
+    backdrop-filter: blur(8px);
+    z-index: 1080;
+}
+
+.leave-room-modal {
+    background: linear-gradient(160deg, rgba(11, 16, 37, 0.96), rgba(8, 10, 22, 0.96));
+    border: 1px solid rgba(124, 138, 233, 0.34);
+}

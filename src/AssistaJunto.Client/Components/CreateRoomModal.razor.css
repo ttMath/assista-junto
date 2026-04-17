@@ -23,3 +23,52 @@
     color: #fff;
     box-shadow: 0 0 0 0.2rem rgba(112, 124, 255, 0.16);
 }
+
+.room-policy-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 50%;
+    border: 1px solid rgba(170, 180, 255, 0.5);
+    color: #d9e0ff;
+    background: rgba(25, 31, 62, 0.7);
+    cursor: help;
+    outline: none;
+}
+
+.room-policy-icon {
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.room-policy-tooltip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 0.55rem);
+    transform: translateX(-50%);
+    width: min(80vw, 340px);
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(137, 148, 236, 0.45);
+    background: rgba(9, 13, 30, 0.96);
+    color: #e8ecff;
+    font-size: 0.78rem;
+    text-align: center;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.16s ease;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.room-policy-info:hover .room-policy-tooltip,
+.room-policy-info:focus .room-policy-tooltip,
+.room-policy-info:focus-visible .room-policy-tooltip {
+    opacity: 1;
+    visibility: visible;
+}

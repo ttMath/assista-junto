@@ -2,7 +2,13 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content create-room-modal p-2 rounded-4 shadow-lg">
             <div class="modal-header border-0 pb-0">
-                <h4 class="modal-title fw-bold text-white">Nova Sala</h4>
+                <div class="d-flex align-items-center gap-2">
+                    <h4 class="modal-title fw-bold text-white mb-0">Nova Sala</h4>
+                    <span class="room-policy-info" tabindex="0" aria-label="Informações sobre limite de salas">
+                        <span class="room-policy-icon">i</span>
+                        <span class="room-policy-tooltip">Limite de 3 salas por usuário. Salas são removidas automaticamente após 3 minutos de inatividade.</span>
+                    </span>
+                </div>
                 <button type="button" class="btn-close btn-close-white" @onclick="OnClose"></button>
             </div>
 

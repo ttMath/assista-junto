@@ -63,43 +63,18 @@ else if (!AuthState.IsAuthenticated)
 }
 else
 {
-    <section class="lobby-shell">
-        <div class="container py-4 py-lg-5">
-            <div class="lobby-hero mb-4 mb-lg-5">
-                <div>
+    <section class="lobby-shell d-flex align-items-center">
+        <div class="container py-4 py-lg-5 text-center">
+            <div class="lobby-hero mx-auto" style="max-width: 620px;">
+                <div class="w-100">
                     <p class="lobby-eyebrow mb-2">ASSISTA JUNTO</p>
-                    <h1 class="fw-black text-white mb-2">Lobby da Comunidade</h1>
-                    <p class="text-muted mb-0">Entre em uma sala ativa ou crie uma nova sessão sincronizada.</p>
+                    <h1 class="fw-black text-white mb-2">Crie sua sala</h1>
+                    <p class="text-muted mb-4">Após escolher seu apelido, você cria uma nova sala e entra direto nela.</p>
+                    <button class="btn btn-primary btn-create-room" @onclick="PrepareNewRoom">
+                        + Nova Sala
+                    </button>
                 </div>
-                <button class="btn btn-primary btn-create-room" @onclick="PrepareNewRoom">
-                    + Nova Sala
-                </button>
             </div>
-
-            @if (_rooms is null)
-            {
-                <div class="lobby-loading text-center py-5 text-muted">Buscando salas...</div>
-            }
-            else if (_rooms.Count == 0)
-            {
-                <EmptyState OnCreateClick="PrepareNewRoom" />
-            }
-            else
-            {
-                <div class="row g-4">
-                    @foreach (var room in _rooms)
-                    {
-                        <Roomcard RoomName="@room.Name"
-                                  OwnerName="@room.OwnerDisplayName"
-                                  VideoCount="@room.Playlist.Count"
-                                  HasPassword="@room.HasPassword"
-                                  OnDelete="() => ConfirmDeleteRoom(room.Hash)"
-                                  OnJoin="() => EnterRoom(room)"
-                                  Hash="@room.Hash"
-                                  UserCount="@room.UsersCount" />
-                    }
-                </div>
-            }
         </div>
     </section>
 
@@ -120,7 +95,6 @@ else
 }
 
 @code {
-    private List<RoomModel>? _rooms;
     private bool _showCreateModal;
     private string? _errorMessage;
 
@@ -137,7 +111,7 @@ else
             await AuthState.InitializeAsync();
             if (AuthState.IsAuthenticated)
             {
-                _rooms = await Api.GetActiveRoomsAsync();
+                PrepareNewRoom();
             }
             _initialized = true;
             StateHasChanged();
@@ -151,7 +125,7 @@ else
         {
             await AuthState.SetUsernameAsync(_nameInput.Trim());
             _nameValidationMessage = null;
-            _rooms = await Api.GetActiveRoomsAsync();
+            PrepareNewRoom();
             StateHasChanged();
         }
         catch (InvalidOperationException ex)
@@ -192,23 +166,8 @@ else
         catch (Exception ex)
         {
             _showCreateModal = false;
-            _errorMessage = "O servidor rejeitou os dados. Tente outro nome.";
+            _errorMessage = ex is InvalidOperationException ? ex.Message : "O servidor rejeitou os dados. Tente outro nome.";
             Console.WriteLine(ex.Message);
-        }
-    }
-
-    private void EnterRoom(RoomModel room)
-    {
-        Nav.NavigateTo($"/sala/{room.Hash}");
-    }
-
-    private async Task ConfirmDeleteRoom(string hash)
-    {
-        var success = await Api.DeleteRoomAsync(hash);
-        if (success)
-        {
-            _rooms?.RemoveAll(r => r.Hash == hash);
-            StateHasChanged();
         }
     }
 }

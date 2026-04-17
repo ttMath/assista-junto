@@ -7,7 +7,7 @@
 <div class="page">
     <header class="top-bar d-flex align-items-center justify-content-between px-3 px-md-4 py-2 text-white">
         <div class="d-flex align-items-center gap-3">
-            <button @onclick="@(() => Nav.NavigateTo("", true))" class="text-decoration-none text-white fw-bold fs-5 fs-md-4 home-btn">🎬 Assista Junto</button>
+            <button @onclick="OnHomeClick" class="text-decoration-none text-white fw-bold fs-5 fs-md-4 home-btn">🎬 Assista Junto</button>
         </div>
         <div class="d-flex align-items-center gap-3">
             @if (AuthState.IsAuthenticated)
@@ -51,6 +51,29 @@
         <div class="name-edit-alert">@_editNameError</div>
     }
 
+    @if (_showLeaveRoomModal)
+    {
+        <div class="modal show d-block modal-overlay" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content leave-room-modal p-2 rounded-4 shadow-lg">
+                    <div class="modal-header border-0 pb-0">
+                        <h4 class="modal-title fw-bold text-white">Sair da sala</h4>
+                        <button type="button" class="btn-close btn-close-white" @onclick="CancelLeaveRoom"></button>
+                    </div>
+
+                    <div class="modal-body p-4">
+                        <p class="text-white mb-0">Deseja sair da sala atual e voltar para a tela inicial?</p>
+                    </div>
+
+                    <div class="modal-footer border-0 pt-0 gap-3">
+                        <button class="btn text-white fw-bold text-decoration-none" @onclick="ConfirmLeaveRoom">Sim</button>
+                        <button class="btn btn-primary px-4 fw-bold shadow-sm col" @onclick="CancelLeaveRoom">Não</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <main class="content-area">
         @Body
     </main>
@@ -61,6 +84,7 @@
     private string _editNameInput = "";
     private ElementReference _editInput;
     private string? _editNameError;
+    private bool _showLeaveRoomModal;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -112,6 +136,35 @@
     {
         await AuthState.LogoutAsync();
         Nav.NavigateTo("/", forceLoad: true);
+    }
+
+    private void OnHomeClick()
+    {
+        if (IsInsideRoom())
+        {
+            _showLeaveRoomModal = true;
+            return;
+        }
+
+        Nav.NavigateTo("", true);
+    }
+
+    private void CancelLeaveRoom()
+    {
+        _showLeaveRoomModal = false;
+    }
+
+    private void ConfirmLeaveRoom()
+    {
+        _showLeaveRoomModal = false;
+        Nav.NavigateTo("", true);
+    }
+
+    private bool IsInsideRoom()
+    {
+        var relativePath = Nav.ToBaseRelativePath(Nav.Uri);
+        var cleanPath = relativePath.Split('?', '#')[0];
+        return cleanPath.StartsWith("sala/", StringComparison.OrdinalIgnoreCase);
     }
 
     public void Dispose()

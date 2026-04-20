@@ -9,6 +9,11 @@
 
 <PageTitle>Sala — Assista Junto</PageTitle>
 
+<HeadContent>
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <meta name="googlebot" content="noindex,nofollow,noarchive" />
+</HeadContent>
+
 <div class="position-fixed top-0 end-0 p-3" style="z-index:1080">
     @foreach (var toast in _toasts)
     {
@@ -86,6 +91,10 @@ else
                                 {
                                     <span>+ Adicionar</span>
                                 }
+                            </button>
+                            <button class="btn btn-outline-light copy-room-link-button" @onclick="CopyRoomUrl" title="Copiar URL da sala">
+                                <i class="bi bi-link-45deg me-1"></i>
+                                <span>Copiar URL</span>
                             </button>
                         </div>
                         @if (_isAddingVideos)
@@ -236,6 +245,21 @@ else
         catch (InvalidOperationException ex)
         {
             ShowToast(ex.Message);
+        }
+    }
+
+    private async Task CopyRoomUrl()
+    {
+        var roomUrl = Nav.ToAbsoluteUri($"/sala/{RoomHash}").ToString();
+
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", roomUrl);
+            ShowToast("URL da sala copiada.");
+        }
+        catch
+        {
+            ShowToast("Não foi possível copiar a URL da sala.");
         }
     }
 

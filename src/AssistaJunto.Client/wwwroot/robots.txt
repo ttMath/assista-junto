@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /sala/
+
+Sitemap: https://www.assistajunto.com.br/sitemap.xml

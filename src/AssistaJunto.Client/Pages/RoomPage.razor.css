@@ -115,6 +115,18 @@
     font-weight: 700;
 }
 
+.copy-room-link-button {
+    white-space: nowrap;
+    border-color: rgba(123, 137, 230, 0.4);
+    color: #dce3ff;
+}
+
+.copy-room-link-button:hover {
+    background: rgba(111, 123, 255, 0.16);
+    border-color: rgba(148, 159, 240, 0.6);
+    color: #fff;
+}
+
 .playlist-panel {
     max-height: 365px;
     display: flex;

@@ -115,10 +115,55 @@
     font-weight: 700;
 }
 
+.add-video-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.add-action-btn {
+    border-color: rgba(125, 140, 232, 0.35);
+    background: rgba(18, 24, 48, 0.78);
+    color: #e6ebff;
+    font-weight: 600;
+}
+
+.add-action-btn:hover {
+    border-color: rgba(155, 168, 255, 0.58);
+    background: rgba(29, 37, 72, 0.9);
+    color: #fff;
+}
+
+.add-shuffle-toggle {
+    border: 1px dashed rgba(125, 199, 255, 0.48);
+    background: rgba(11, 34, 50, 0.7);
+    color: #9ddcff;
+    font-weight: 700;
+}
+
+.add-shuffle-toggle:hover {
+    border-color: rgba(141, 219, 255, 0.72);
+    background: rgba(14, 44, 66, 0.86);
+    color: #d9f5ff;
+}
+
+.add-shuffle-toggle.active {
+    border-style: solid;
+    border-color: rgba(118, 225, 255, 0.76);
+    background: linear-gradient(135deg, rgba(21, 119, 151, 0.6), rgba(15, 71, 116, 0.66));
+    color: #f1fcff;
+}
+
 .playlist-panel {
     max-height: 365px;
     display: flex;
     flex-direction: column;
+}
+
+.playlist-actions {
+    display: inline-flex;
+    gap: 0.45rem;
+    align-items: center;
 }
 
 .social-panel {
@@ -190,6 +235,53 @@
 .playlist-item.active {
     border-color: rgba(138, 150, 255, 0.78);
     background: rgba(79, 93, 255, 0.18);
+}
+
+.playlist-item.drop-target {
+    border-color: rgba(120, 213, 255, 0.84);
+    box-shadow: inset 0 0 0 1px rgba(130, 223, 255, 0.45);
+}
+
+.playlist-item.dragging-source {
+    opacity: 0.65;
+}
+
+.drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.5rem;
+    height: 2.2rem;
+    border-radius: 0.45rem;
+    color: #9aa7e8;
+    background: rgba(69, 81, 158, 0.18);
+    border: 1px dashed rgba(141, 154, 236, 0.42);
+    cursor: grab;
+    flex: 0 0 auto;
+}
+
+.drag-handle-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.drag-handle:hover {
+    color: #e4e9ff;
+    border-color: rgba(172, 184, 255, 0.68);
+    background: rgba(86, 101, 190, 0.28);
+}
+
+.drag-handle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(151, 170, 255, 0.45);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
 }
 
 .playlist-thumb {

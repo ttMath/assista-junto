@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0-preview.5.25277.114" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="18.3.3" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.3.3" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.7" />
   </ItemGroup>
 
   <ItemGroup>

@@ -84,6 +84,41 @@ public class PlaylistService : IPlaylistService
         return (oEmbed.Title!, thumbnailUrl);
     }
 
+    private static PlaylistItemDto MapItemToDto(AssistaJunto.Domain.Entities.PlaylistItem item)
+    {
+        return new PlaylistItemDto(
+            item.Id,
+            item.VideoId,
+            item.Title,
+            item.ThumbnailUrl,
+            item.Order,
+            item.AddedByDisplayName,
+            item.AddedAt
+        );
+    }
+
+    private static int ResolveInsertIndex(AssistaJunto.Domain.Entities.Room room, PlaylistInsertMode insertMode)
+    {
+        if (room.Playlist.Count == 0)
+            return 0;
+
+        return insertMode switch
+        {
+            PlaylistInsertMode.AfterCurrent or PlaylistInsertMode.PlayNow
+                => Math.Min(room.CurrentVideoIndex + 1, room.Playlist.Count),
+            _ => room.Playlist.Count
+        };
+    }
+
+    private static void ShuffleInPlace<T>(IList<T> items)
+    {
+        for (var i = items.Count - 1; i > 0; i--)
+        {
+            var j = Random.Shared.Next(i + 1);
+            (items[i], items[j]) = (items[j], items[i]);
+        }
+    }
+
     public async Task<PlaylistItemDto> AddToPlaylistAsync(string roomHash, AddToPlaylistRequest request, string username)
     {
         var room = await _roomRepository.GetByHashAsync(roomHash)
@@ -92,19 +127,36 @@ public class PlaylistService : IPlaylistService
         var item = room.AddToPlaylist(request.VideoId, request.Title, request.ThumbnailUrl, username);
         await _roomRepository.UpdateAsync(room);
 
-        return new PlaylistItemDto(
-            item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
-            item.Order, item.AddedByDisplayName, item.AddedAt
-        );
+        return MapItemToDto(item);
     }
 
-    public async Task<AddPlaylistByUrlResponse> AddPlaylistByUrlAsync(string roomHash, string url, string username)
+    public async Task<List<PlaylistItemDto>> ReorderPlaylistAsync(string roomHash, ReorderPlaylistRequest request)
     {
         var room = await _roomRepository.GetByHashAsync(roomHash)
             ?? throw new InvalidOperationException("Sala não encontrada.");
 
-        var parsedPlaylistId = PlaylistId.TryParse(url);
+        var changed = room.ReorderPlaylistItem(request.ItemId, request.TargetIndex);
+        if (changed)
+            await _roomRepository.UpdateAsync(room);
+
+        return room.Playlist.OrderBy(p => p.Order).Select(MapItemToDto).ToList();
+    }
+
+    public async Task<AddPlaylistByUrlResponse> AddPlaylistByUrlAsync(string roomHash, AddPlaylistByUrlRequest request, string username)
+    {
+        var room = await _roomRepository.GetByHashAsync(roomHash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        if (string.IsNullOrWhiteSpace(request.Url))
+            throw new InvalidOperationException("URL do YouTube inválida.");
+
+        var parsedPlaylistId = PlaylistId.TryParse(request.Url);
         var addedItems = new List<PlaylistItemDto>();
+        var candidates = new List<(string VideoId, string Title, string ThumbnailUrl)>();
+        var knownVideoIds = new HashSet<string>(
+            room.Playlist.Select(p => p.VideoId),
+            StringComparer.OrdinalIgnoreCase
+        );
 
         if (parsedPlaylistId is not null)
         {
@@ -120,29 +172,25 @@ public class PlaylistService : IPlaylistService
 
             foreach (var video in videos)
             {
-                if (room.HasVideo(video.Id))
+                var videoId = video.Id.Value;
+                if (!knownVideoIds.Add(videoId))
                     continue;
 
                 var thumbnailUrl = video.Thumbnails.GetWithHighestResolution()?.Url
-                    ?? $"https://img.youtube.com/vi/{video.Id}/mqdefault.jpg";
+                    ?? $"https://img.youtube.com/vi/{videoId}/mqdefault.jpg";
 
-                var item = room.AddToPlaylist(video.Id, video.Title, thumbnailUrl, username);
-
-                addedItems.Add(new PlaylistItemDto(
-                    item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
-                    item.Order, item.AddedByDisplayName, item.AddedAt
-                ));
+                candidates.Add((videoId, video.Title, thumbnailUrl));
             }
         }
         else
         {
-            var parsedVideoId = TryParseVideoId(url);
+            var parsedVideoId = TryParseVideoId(request.Url);
             if (parsedVideoId is null)
                 throw new InvalidOperationException("URL do YouTube inválida.");
 
             var videoIdStr = parsedVideoId.Value.Value;
 
-            if (room.HasVideo(videoIdStr))
+            if (!knownVideoIds.Add(videoIdStr))
                 throw new InvalidOperationException("Este vídeo já está na playlist.");
 
             var validatedMetadata = await GetValidatedVideoMetadataAsync(videoIdStr);
@@ -166,17 +214,53 @@ public class PlaylistService : IPlaylistService
             {
             }
 
-            var item = room.AddToPlaylist(finalVideoId, title, thumbnailUrl, username);
+            if (!string.Equals(finalVideoId, videoIdStr, StringComparison.OrdinalIgnoreCase) && !knownVideoIds.Add(finalVideoId))
+                throw new InvalidOperationException("Este vídeo já está na playlist.");
 
-            addedItems.Add(new PlaylistItemDto(
-                item.Id, item.VideoId, item.Title, item.ThumbnailUrl,
-                item.Order, item.AddedByDisplayName, item.AddedAt
-            ));
+            candidates.Add((finalVideoId, title, thumbnailUrl));
         }
+
+        if (request.Shuffle && candidates.Count > 1)
+            ShuffleInPlace(candidates);
+
+        var insertIndex = ResolveInsertIndex(room, request.InsertMode);
+
+        for (var i = 0; i < candidates.Count; i++)
+        {
+            var candidate = candidates[i];
+            var targetIndex = request.InsertMode == PlaylistInsertMode.End
+                ? room.Playlist.Count
+                : Math.Min(insertIndex + i, room.Playlist.Count);
+
+            var item = room.AddToPlaylistAt(
+                candidate.VideoId,
+                candidate.Title,
+                candidate.ThumbnailUrl,
+                username,
+                targetIndex
+            );
+
+            addedItems.Add(MapItemToDto(item));
+        }
+
+        if (request.InsertMode == PlaylistInsertMode.PlayNow && addedItems.Count > 0)
+            room.JumpToIndex(insertIndex);
 
         await _roomRepository.UpdateAsync(room);
 
         return new AddPlaylistByUrlResponse(addedItems, addedItems.Count);
+    }
+
+    public async Task<List<PlaylistItemDto>> ShufflePlaylistAsync(string roomHash)
+    {
+        var room = await _roomRepository.GetByHashAsync(roomHash)
+            ?? throw new InvalidOperationException("Sala não encontrada.");
+
+        var changed = room.ShuffleUpcomingPlaylist();
+        if (changed)
+            await _roomRepository.UpdateAsync(room);
+
+        return room.Playlist.OrderBy(p => p.Order).Select(MapItemToDto).ToList();
     }
 
     public async Task RemoveFromPlaylistAsync(string roomHash, Guid itemId)

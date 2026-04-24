@@ -82,6 +82,17 @@ public class ApiService
         return await response.Content.ReadFromJsonAsync<PlaylistItemModel>();
     }
 
+    public async Task ReorderPlaylistItemAsync(string hash, Guid itemId, int targetIndex)
+    {
+        SetUsername();
+        var response = await _httpClient.PostAsJsonAsync($"api/rooms/{hash}/playlist/reorder", new ReorderPlaylistRequestModel
+        {
+            ItemId = itemId,
+            TargetIndex = targetIndex
+        });
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task RemoveFromPlaylistAsync(string hash, Guid itemId)
     {
         SetUsername();
@@ -94,12 +105,19 @@ public class ApiService
         await _httpClient.DeleteAsync($"api/rooms/{hash}/playlist");
     }
 
-    public async Task<AddPlaylistByUrlResponseModel?> AddPlaylistByUrlAsync(string hash, string url)
+    public async Task<AddPlaylistByUrlResponseModel?> AddPlaylistByUrlAsync(string hash, AddPlaylistByUrlRequestModel model)
     {
         SetUsername();
-        var response = await _httpClient.PostAsJsonAsync($"api/rooms/{hash}/playlist/from-url", new { Url = url });
+        var response = await _httpClient.PostAsJsonAsync($"api/rooms/{hash}/playlist/from-url", model);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<AddPlaylistByUrlResponseModel>();
+    }
+
+    public async Task ShufflePlaylistAsync(string hash)
+    {
+        SetUsername();
+        var response = await _httpClient.PostAsync($"api/rooms/{hash}/playlist/shuffle", null);
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task<bool> DeleteRoomAsync(string hash)

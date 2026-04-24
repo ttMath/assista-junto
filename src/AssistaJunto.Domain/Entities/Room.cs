@@ -62,29 +62,117 @@ public class Room
 
     public PlaylistItem AddToPlaylist(string videoId, string title, string thumbnailUrl, string addedByName)
     {
-        if (_playlist.Any(p => p.VideoId == videoId))
+        return AddToPlaylistAt(videoId, title, thumbnailUrl, addedByName, null);
+    }
+
+    public PlaylistItem AddToPlaylistAt(string videoId, string title, string thumbnailUrl, string addedByName, int? order)
+    {
+        if (_playlist.Any(p => string.Equals(p.VideoId, videoId, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException("Este vídeo já está na playlist.");
 
-        var order = _playlist.Count;
-        var item = new PlaylistItem(Id, videoId, title, thumbnailUrl, order, addedByName);
-        _playlist.Add(item);
+        _playlist.Sort((a, b) => a.Order.CompareTo(b.Order));
+
+        var wasEmpty = _playlist.Count == 0;
+        var insertIndex = order.HasValue
+            ? Math.Clamp(order.Value, 0, _playlist.Count)
+            : _playlist.Count;
+
+        if (!wasEmpty && insertIndex <= CurrentVideoIndex)
+            CurrentVideoIndex++;
+
+        var item = new PlaylistItem(Id, videoId, title, thumbnailUrl, insertIndex, addedByName);
+        _playlist.Insert(insertIndex, item);
+
+        for (int i = insertIndex + 1; i < _playlist.Count; i++)
+            _playlist[i].UpdateOrder(i);
+
+        if (wasEmpty)
+        {
+            CurrentVideoIndex = 0;
+            CurrentTime = 0;
+            IsPlaying = true;
+        }
+
         return item;
     }
 
     public bool HasVideo(string videoId)
     {
-        return _playlist.Any(p => p.VideoId == videoId);
+        return _playlist.Any(p => string.Equals(p.VideoId, videoId, StringComparison.OrdinalIgnoreCase));
     }
 
     public void RemoveFromPlaylist(Guid itemId)
     {
+        _playlist.Sort((a, b) => a.Order.CompareTo(b.Order));
+
         var item = _playlist.FirstOrDefault(x => x.Id == itemId)
             ?? throw new InvalidOperationException("Item não encontrado na playlist.");
 
+        var removedOrder = item.Order;
+        var removedCurrent = removedOrder == CurrentVideoIndex;
+
         _playlist.Remove(item);
+
+        if (_playlist.Count == 0)
+        {
+            CurrentVideoIndex = 0;
+            CurrentTime = 0;
+            IsPlaying = false;
+            return;
+        }
+
+        if (removedOrder < CurrentVideoIndex)
+            CurrentVideoIndex--;
+
+        if (CurrentVideoIndex >= _playlist.Count)
+            CurrentVideoIndex = _playlist.Count - 1;
+
+        if (removedCurrent)
+            CurrentTime = 0;
 
         for (int i = 0; i < _playlist.Count; i++)
             _playlist[i].UpdateOrder(i);
+    }
+
+    public bool ReorderPlaylistItem(Guid itemId, int targetIndex)
+    {
+        if (_playlist.Count <= 1)
+            return false;
+
+        _playlist.Sort((a, b) => a.Order.CompareTo(b.Order));
+
+        var sourceIndex = _playlist.FindIndex(x => x.Id == itemId);
+        if (sourceIndex < 0)
+            throw new InvalidOperationException("Item não encontrado na playlist.");
+
+        var clampedTargetIndex = Math.Clamp(targetIndex, 0, _playlist.Count - 1);
+        if (sourceIndex == clampedTargetIndex)
+            return false;
+
+        PlaylistItem? currentItem = null;
+        if (CurrentVideoIndex >= 0 && CurrentVideoIndex < _playlist.Count)
+            currentItem = _playlist[CurrentVideoIndex];
+
+        var movedItem = _playlist[sourceIndex];
+        _playlist.RemoveAt(sourceIndex);
+        _playlist.Insert(clampedTargetIndex, movedItem);
+
+        for (int i = 0; i < _playlist.Count; i++)
+            _playlist[i].UpdateOrder(i);
+
+        if (currentItem is not null)
+        {
+            var currentIndex = _playlist.FindIndex(x => x.Id == currentItem.Id);
+            CurrentVideoIndex = currentIndex >= 0
+                ? currentIndex
+                : Math.Clamp(CurrentVideoIndex, 0, _playlist.Count - 1);
+        }
+        else
+        {
+            CurrentVideoIndex = Math.Clamp(CurrentVideoIndex, 0, _playlist.Count - 1);
+        }
+
+        return true;
     }
 
     public bool MoveToNext()
@@ -126,6 +214,36 @@ public class Room
     public PlaylistItem? GetCurrentVideo()
     {
         return _playlist.OrderBy(p => p.Order).ElementAtOrDefault(CurrentVideoIndex);
+    }
+
+    public bool ShuffleUpcomingPlaylist()
+    {
+        if (_playlist.Count <= 1)
+            return false;
+
+        _playlist.Sort((a, b) => a.Order.CompareTo(b.Order));
+
+        var hasCurrentVideo = CurrentVideoIndex >= 0
+            && CurrentVideoIndex < _playlist.Count
+            && (IsPlaying || CurrentTime > 0);
+
+        var shuffleStartIndex = hasCurrentVideo
+            ? Math.Min(CurrentVideoIndex + 1, _playlist.Count)
+            : 0;
+
+        if (_playlist.Count - shuffleStartIndex <= 1)
+            return false;
+
+        for (int i = _playlist.Count - 1; i > shuffleStartIndex; i--)
+        {
+            var j = RandomNumberGenerator.GetInt32(shuffleStartIndex, i + 1);
+            (_playlist[i], _playlist[j]) = (_playlist[j], _playlist[i]);
+        }
+
+        for (int i = 0; i < _playlist.Count; i++)
+            _playlist[i].UpdateOrder(i);
+
+        return true;
     }
 
     public void Close()

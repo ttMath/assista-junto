@@ -54,10 +54,30 @@ public class AddToPlaylistModel
     public string ThumbnailUrl { get; set; } = string.Empty;
 }
 
+public class ReorderPlaylistRequestModel
+{
+    public Guid ItemId { get; set; }
+    public int TargetIndex { get; set; }
+}
+
 public class AddPlaylistByUrlResponseModel
 {
     public List<PlaylistItemModel> Items { get; set; } = [];
     public int TotalAdded { get; set; }
+}
+
+public enum PlaylistInsertModeModel
+{
+    End,
+    AfterCurrent,
+    PlayNow
+}
+
+public class AddPlaylistByUrlRequestModel
+{
+    public string Url { get; set; } = string.Empty;
+    public bool Shuffle { get; set; }
+    public PlaylistInsertModeModel InsertMode { get; set; } = PlaylistInsertModeModel.End;
 }
 
 public class ChatMessageModel

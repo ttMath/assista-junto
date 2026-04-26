@@ -1,10 +1,18 @@
 ﻿@inject IJSRuntime JS
+@inject ILogger<ChatRoom> Logger
 
 <div class="chat-wrapper shadow-sm rounded-3 overflow-hidden">
-    <div class="chat-header p-3 d-flex align-items-center">
+    <div class="chat-header p-3 d-flex align-items-center justify-content-between">
         <h5 class="mb-0 fw-bold text-white">
             <i class="bi bi-chat-dots me-2"></i>CHAT
         </h5>
+
+        <SoundToggleButton IsMuted="IsNotificationMuted"
+                           OnToggle="OnToggleNotifications"
+                           ActiveText="Som ativo"
+                           MutedText="Silenciado"
+                           ActiveTitle="Silenciar som de novas mensagens"
+                           MutedTitle="Ativar som de novas mensagens" />
     </div>
 
     @if (IsChatBlocked)
@@ -67,6 +75,8 @@
     [Parameter] public bool IsChatBlocked { get; set; }
     [Parameter] public int ChatBlockSecondsRemaining { get; set; }
     [Parameter] public string? ChatBlockMessage { get; set; }
+    [Parameter] public bool IsNotificationMuted { get; set; }
+    [Parameter] public EventCallback OnToggleNotifications { get; set; }
 
     private string ChatInput { get; set; } = "";
     private ElementReference _chatContainer;
@@ -108,7 +118,10 @@
             {
                 await JS.InvokeVoidAsync("eval", "const el = document.querySelector('.chat-messages-area'); if(el) el.scrollTop = el.scrollHeight;");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Falha ao aplicar auto-scroll do chat.");
+            }
         }
     }
 }

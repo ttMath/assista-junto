@@ -5,6 +5,7 @@
 @inject RoomHubService Hub
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject ILogger<RoomPage> Logger
 @implements IAsyncDisposable
 
 <PageTitle>Sala — Assista Junto</PageTitle>
@@ -99,15 +100,27 @@ else
                         </div>
 
                         <div class="add-video-actions mt-2">
-                            <button class="btn btn-sm btn-outline-info add-action-btn" @onclick="() => AddVideo(PlaylistInsertModeModel.AfterCurrent)" disabled="@_isAddingVideos">
+                            <button class="btn btn-sm btn-outline-info add-action-btn"
+                                    title="Adiciona o vídeo logo após o que está tocando"
+                                    aria-label="Adiciona o vídeo logo após o que está tocando"
+                                    @onclick="() => AddVideo(PlaylistInsertModeModel.AfterCurrent)"
+                                    disabled="@_isAddingVideos">
                                 <i class="bi bi-skip-forward me-1"></i>Após atual
                             </button>
 
-                            <button class="btn btn-sm btn-outline-warning add-action-btn" @onclick="() => AddVideo(PlaylistInsertModeModel.PlayNow)" disabled="@_isAddingVideos">
+                            <button class="btn btn-sm btn-outline-warning add-action-btn"
+                                    title="Coloca o vídeo para tocar imediatamente"
+                                    aria-label="Coloca o vídeo para tocar imediatamente"
+                                    @onclick="() => AddVideo(PlaylistInsertModeModel.PlayNow)"
+                                    disabled="@_isAddingVideos">
                                 <i class="bi bi-play-circle me-1"></i>Ver agora
                             </button>
 
-                            <button class="btn btn-sm add-shuffle-toggle @(_shuffleOnAdd ? "active" : "")" @onclick="ToggleShuffleOnAdd" disabled="@_isAddingVideos">
+                            <button class="btn btn-sm add-shuffle-toggle @(_shuffleOnAdd ? "active" : "")"
+                                    title="Embaralha a ordem dos vídeos ao adicionar uma playlist"
+                                    aria-label="Embaralha a ordem dos vídeos ao adicionar uma playlist"
+                                    @onclick="ToggleShuffleOnAdd"
+                                    disabled="@_isAddingVideos">
                                 <i class="bi bi-shuffle me-1"></i>Shuffle na adição: @(_shuffleOnAdd ? "ON" : "OFF")
                             </button>
                         </div>
@@ -200,7 +213,9 @@ else
                                           OnSendMessage="HandleSendMessage"
                                           IsChatBlocked="IsChatBlocked"
                                           ChatBlockSecondsRemaining="ChatBlockSecondsRemaining"
-                                          ChatBlockMessage="@_chatBlockMessage" />
+                                          ChatBlockMessage="@_chatBlockMessage"
+                                          IsNotificationMuted="_isChatNotificationMuted"
+                                          OnToggleNotifications="ToggleChatNotificationMute" />
                             </div>
                         }
                         else
@@ -263,6 +278,7 @@ else
     private DateTime? _chatBlockedUntilUtc;
     private string? _chatBlockMessage;
     private CancellationTokenSource? _chatBlockCountdownCts;
+    private bool _isChatNotificationMuted;
 
     private DateTime _lastRemoteActionTime = DateTime.MinValue;
     private const int RemoteCooldownMs = 1500;
@@ -350,6 +366,7 @@ else
 
         Hub.OnRoomStateReceived += OnRoomState;
         Hub.OnPlayerActionReceived += OnPlayerAction;
+        Hub.OnChatHistoryReceived += OnChatHistory;
         Hub.OnChatMessageReceived += OnChatMessage;
         Hub.OnPlaylistUpdated += OnPlaylistItem;
         Hub.OnPlaylistCleared += OnPlaylistCleared;
@@ -456,8 +473,9 @@ else
                 await InvokeAsync(StateHasChanged);
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Logger.LogDebug(ex, "Contagem regressiva de bloqueio do chat foi cancelada para a sala {RoomHash}.", RoomHash);
         }
     }
 
@@ -668,13 +686,68 @@ else
         });
     }
 
-    private void OnChatMessage(ChatMessageModel message)
+    private void OnChatHistory(List<ChatMessageModel> messages)
     {
         InvokeAsync(() =>
         {
-            _chatMessages.Add(message);
+            messages ??= [];
+
+            var merged = _chatMessages
+                .Concat(messages)
+                .GroupBy(m => m.Id)
+                .Select(g => g.First())
+                .OrderBy(m => m.SentAt)
+                .ToList();
+
+            _chatMessages = merged;
             StateHasChanged();
         });
+    }
+
+    private void OnChatMessage(ChatMessageModel message)
+    {
+        InvokeAsync(async () =>
+        {
+            if (_chatMessages.Any(m => m.Id == message.Id))
+            {
+                return;
+            }
+
+            _chatMessages.Add(message);
+
+            if (ShouldPlayChatNotification(message))
+            {
+                await PlayChatNotificationAsync();
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private async Task ToggleChatNotificationMute()
+    {
+        _isChatNotificationMuted = !_isChatNotificationMuted;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private bool ShouldPlayChatNotification(ChatMessageModel message)
+    {
+        if (_isChatNotificationMuted)
+            return false;
+
+        return !string.Equals(message.UserDisplayName, AuthState.Username, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task PlayChatNotificationAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("chatNotifications.playMessageAlert");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Não foi possível tocar o som de notificação de chat na sala {RoomHash}.", RoomHash);
+        }
     }
 
     private void OnPlaylistItem(PlaylistItemModel item)
@@ -874,8 +947,15 @@ else
             return;
         }
 
+        var previousPlaylist = _playlist.ToList();
+        var previousCurrentVideoIndex = _currentVideoIndex;
+
         _isReorderingPlaylist = true;
         _lastPlaylistDropAtUtc = DateTime.UtcNow;
+
+        ApplyLocalPlaylistReorder(sourceIndex, targetIndex);
+        var optimisticOrder = _playlist.Select(x => x.Id).ToList();
+        StateHasChanged();
 
         try
         {
@@ -883,6 +963,12 @@ else
         }
         catch (Exception)
         {
+            if (IsPlaylistOrder(_playlist, optimisticOrder))
+            {
+                _playlist = previousPlaylist;
+                _currentVideoIndex = ClampPlaylistIndex(previousCurrentVideoIndex);
+            }
+
             ShowToast("Não foi possível reordenar a playlist agora.");
         }
         finally
@@ -891,6 +977,58 @@ else
             OnPlaylistDragEnd();
             StateHasChanged();
         }
+    }
+
+    private void ApplyLocalPlaylistReorder(int sourceIndex, int targetIndex)
+    {
+        var currentItemId = TryGetCurrentPlaylistItemId();
+        var movedItem = _playlist[sourceIndex];
+
+        _playlist.RemoveAt(sourceIndex);
+        targetIndex = Math.Clamp(targetIndex, 0, _playlist.Count);
+        _playlist.Insert(targetIndex, movedItem);
+
+        if (currentItemId.HasValue)
+        {
+            var updatedCurrentIndex = _playlist.FindIndex(x => x.Id == currentItemId.Value);
+            _currentVideoIndex = updatedCurrentIndex >= 0
+                ? updatedCurrentIndex
+                : ClampPlaylistIndex(_currentVideoIndex);
+        }
+        else
+        {
+            _currentVideoIndex = ClampPlaylistIndex(_currentVideoIndex);
+        }
+    }
+
+    private Guid? TryGetCurrentPlaylistItemId()
+    {
+        if (_currentVideoIndex < 0 || _currentVideoIndex >= _playlist.Count)
+            return null;
+
+        return _playlist[_currentVideoIndex].Id;
+    }
+
+    private int ClampPlaylistIndex(int index)
+    {
+        if (_playlist.Count == 0)
+            return 0;
+
+        return Math.Clamp(index, 0, _playlist.Count - 1);
+    }
+
+    private static bool IsPlaylistOrder(List<PlaylistItemModel> playlist, IReadOnlyList<Guid> expectedOrder)
+    {
+        if (playlist.Count != expectedOrder.Count)
+            return false;
+
+        for (var i = 0; i < playlist.Count; i++)
+        {
+            if (playlist[i].Id != expectedOrder[i])
+                return false;
+        }
+
+        return true;
     }
 
     private async Task RemoveVideo(Guid itemId)
@@ -919,6 +1057,7 @@ else
 
         Hub.OnRoomStateReceived -= OnRoomState;
         Hub.OnPlayerActionReceived -= OnPlayerAction;
+        Hub.OnChatHistoryReceived -= OnChatHistory;
         Hub.OnChatMessageReceived -= OnChatMessage;
         Hub.OnPlaylistUpdated -= OnPlaylistItem;
         Hub.OnPlaylistCleared -= OnPlaylistCleared;
@@ -964,8 +1103,9 @@ else
                 await Hub.ReportPlaybackProgressAsync(RoomHash, currentTime, _currentVideoIndex);
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Logger.LogDebug(ex, "Loop de sincronização de progresso foi cancelado para a sala {RoomHash}.", RoomHash);
         }
     }
 

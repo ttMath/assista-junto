@@ -82,12 +82,8 @@ public class RoomsController : ControllerBase
         {
             var username = GetUsername();
             if (username is null) return BadRequest("Header X-Username é obrigatório e deve ter no máximo 50 caracteres.");
-            var result = await _playlistService.AddPlaylistByUrlAsync(hash, request.Url, username);
-
-            foreach (var item in result.Items)
-            {
-                await _hubContext.Clients.Group(hash).SendAsync("PlaylistUpdated", item);
-            }
+            var result = await _playlistService.AddPlaylistByUrlAsync(hash, request, username);
+            await BroadcastRoomStateAsync(hash, includeCurrentTime: false);
 
             return Ok(result);
         }
@@ -101,10 +97,29 @@ public class RoomsController : ControllerBase
         }
     }
 
+    [HttpPost("{hash}/playlist/reorder")]
+    [EnableRateLimiting("playlist-write")]
+    public async Task<IActionResult> ReorderPlaylist(string hash, [FromBody] ReorderPlaylistRequest request)
+    {
+        await _playlistService.ReorderPlaylistAsync(hash, request);
+        await BroadcastRoomStateAsync(hash, includeCurrentTime: false);
+        return NoContent();
+    }
+
     [HttpDelete("{hash}/playlist/{itemId:guid}")]
     public async Task<IActionResult> RemoveFromPlaylist(string hash, Guid itemId)
     {
         await _playlistService.RemoveFromPlaylistAsync(hash, itemId);
+        await BroadcastRoomStateAsync(hash, includeCurrentTime: false);
+        return NoContent();
+    }
+
+    [HttpPost("{hash}/playlist/shuffle")]
+    [EnableRateLimiting("playlist-write")]
+    public async Task<IActionResult> ShufflePlaylist(string hash)
+    {
+        await _playlistService.ShufflePlaylistAsync(hash);
+        await BroadcastRoomStateAsync(hash, includeCurrentTime: false);
         return NoContent();
     }
 
@@ -120,6 +135,7 @@ public class RoomsController : ControllerBase
     {
         await _playlistService.ClearPlaylistAsync(hash);
         await _hubContext.Clients.Group(hash).SendAsync("PlaylistCleared");
+        await BroadcastRoomStateAsync(hash, includeCurrentTime: false);
         return NoContent();
     }
 
@@ -163,5 +179,18 @@ public class RoomsController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(username)) return null;
         return username.Length > 50 ? null : username;
+    }
+
+    private async Task BroadcastRoomStateAsync(string hash, bool includeCurrentTime = true)
+    {
+        var state = await _roomService.GetRoomStateAsync(hash);
+        if (state is not null)
+        {
+            var synchronizedState = includeCurrentTime
+                ? state
+                : state with { CurrentTime = 0 };
+
+            await _hubContext.Clients.Group(hash).SendAsync("ReceiveRoomState", synchronizedState);
+        }
     }
 }

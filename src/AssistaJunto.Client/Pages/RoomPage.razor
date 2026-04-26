@@ -81,7 +81,7 @@ else
                     <div class="side-panel add-video-panel">
                         <div class="input-group">
                             <input type="text" class="form-control add-video-input" @bind="_youtubeUrl" placeholder="Cole o link do YouTube ou playlist..." disabled="@_isAddingVideos" />
-                            <button class="btn btn-primary add-video-button" @onclick="AddVideo" disabled="@_isAddingVideos">
+                            <button class="btn btn-primary add-video-button" @onclick="() => AddVideo(PlaylistInsertModeModel.End)" disabled="@_isAddingVideos">
                                 @if (_isAddingVideos)
                                 {
                                     <span class="spinner-border spinner-border-sm me-1"></span>
@@ -89,7 +89,7 @@ else
                                 }
                                 else
                                 {
-                                    <span>+ Adicionar</span>
+                                    <span>+ Fila</span>
                                 }
                             </button>
                             <button class="btn btn-outline-light copy-room-link-button" @onclick="CopyRoomUrl" title="Copiar URL da sala">
@@ -97,6 +97,21 @@ else
                                 <span>Copiar URL</span>
                             </button>
                         </div>
+
+                        <div class="add-video-actions mt-2">
+                            <button class="btn btn-sm btn-outline-info add-action-btn" @onclick="() => AddVideo(PlaylistInsertModeModel.AfterCurrent)" disabled="@_isAddingVideos">
+                                <i class="bi bi-skip-forward me-1"></i>Após atual
+                            </button>
+
+                            <button class="btn btn-sm btn-outline-warning add-action-btn" @onclick="() => AddVideo(PlaylistInsertModeModel.PlayNow)" disabled="@_isAddingVideos">
+                                <i class="bi bi-play-circle me-1"></i>Ver agora
+                            </button>
+
+                            <button class="btn btn-sm add-shuffle-toggle @(_shuffleOnAdd ? "active" : "")" @onclick="ToggleShuffleOnAdd" disabled="@_isAddingVideos">
+                                <i class="bi bi-shuffle me-1"></i>Shuffle na adição: @(_shuffleOnAdd ? "ON" : "OFF")
+                            </button>
+                        </div>
+
                         @if (_isAddingVideos)
                         {
                             <div class="adding-info mt-2" role="alert">
@@ -109,19 +124,53 @@ else
                     <div class="side-panel playlist-panel">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h5 class="text-white fw-bold mb-0"><i class="bi bi-music-note-list me-2"></i>Playlist (@_playlist.Count vídeos)</h5>
-                            @if (_playlist.Count > 0)
-                            {
-                                <button class="btn btn-outline-danger btn-sm" @onclick="ClearPlaylist" title="Limpar playlist">
-                                    🗑 Limpar
-                                </button>
-                            }
+
+                            <div class="playlist-actions">
+                                @if (_playlist.Count > 1)
+                                {
+                                    <button class="btn btn-outline-info btn-sm" @onclick="ShufflePlaylistNow" disabled="@_isShufflingPlaylist" title="Embaralhar próximos vídeos">
+                                        @if (_isShufflingPlaylist)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1"></span>
+                                            <span>Embaralhando</span>
+                                        }
+                                        else
+                                        {
+                                            <span><i class="bi bi-shuffle me-1"></i>Embaralhar</span>
+                                        }
+                                    </button>
+                                }
+
+                                @if (_playlist.Count > 0)
+                                {
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="ClearPlaylist" title="Limpar playlist">
+                                        🗑 Limpar
+                                    </button>
+                                }
+                            </div>
                         </div>
                         <div class="playlist-scroll">
                             @for (int i = 0; i < _playlist.Count; i++)
                             {
                                 var idx = i;
                                 var item = _playlist[i];
-                                <button type="button" class="playlist-item d-flex align-items-center @(i == _currentVideoIndex ? "active" : "")" @onclick="() => JumpToVideo(idx)">
+                                <button type="button"
+                                        class="playlist-item d-flex align-items-center @(i == _currentVideoIndex ? "active" : "") @(_dragOverPlaylistIndex == idx ? "drop-target" : "") @(_draggedPlaylistItemId == item.Id ? "dragging-source" : "")"
+                                        @onclick="() => OnPlaylistItemClick(idx)"
+                                        @ondragover="() => OnPlaylistDragOver(idx)"
+                                        @ondragover:preventDefault="true"
+                                        @ondrop="() => OnPlaylistDrop(idx)"
+                                        @ondrop:preventDefault="true">
+                                    <button type="button"
+                                            class="drag-handle me-2"
+                                            title="Arraste para reordenar"
+                                            aria-label="Arrastar para reordenar"
+                                            draggable="true"
+                                            @ondragstart="() => OnPlaylistDragStart(item.Id)"
+                                            @ondragend="OnPlaylistDragEnd"
+                                            @onclick:stopPropagation="true">
+                                        <i class="bi bi-grip-vertical drag-handle-icon" aria-hidden="true"></i>
+                                    </button>
                                     <img src="@item.ThumbnailUrl" alt="" width="88" class="playlist-thumb me-3" />
                                     <div class="flex-grow-1 text-start">
                                         <strong>@item.Title</strong>
@@ -194,11 +243,17 @@ else
     private bool _playerInitialized;
     private bool _playerReady;
     private bool _isAddingVideos;
+    private bool _isShufflingPlaylist;
+    private bool _shuffleOnAdd;
     private bool _showNamePrompt;
     private bool _showPasswordModal;
     private bool _passwordError;
     private string? _joinPassword;
     private RoomModel? _pendingRoom;
+    private Guid? _draggedPlaylistItemId;
+    private int? _dragOverPlaylistIndex;
+    private bool _isReorderingPlaylist;
+    private DateTime _lastPlaylistDropAtUtc = DateTime.MinValue;
     private DotNetObjectReference<RoomPage>? _dotNetRef;
     private ElementReference _chatContainer;
     private SocialTab _activeSocialTab = SocialTab.Chat;
@@ -521,6 +576,16 @@ else
         await Hub.JumpToVideoAsync(RoomHash, index);
     }
 
+    private async Task OnPlaylistItemClick(int index)
+    {
+        if ((DateTime.UtcNow - _lastPlaylistDropAtUtc).TotalMilliseconds < 250)
+        {
+            return;
+        }
+
+        await JumpToVideo(index);
+    }
+
     private void OnRoomState(RoomStateModel state)
     {
         InvokeAsync(async () =>
@@ -716,7 +781,12 @@ else
             await JS.InvokeVoidAsync("youtubePlayer.unmute");
     }
 
-    private async Task AddVideo()
+    private void ToggleShuffleOnAdd()
+    {
+        _shuffleOnAdd = !_shuffleOnAdd;
+    }
+
+    private async Task AddVideo(PlaylistInsertModeModel insertMode)
     {
         if (string.IsNullOrWhiteSpace(_youtubeUrl)) return;
 
@@ -725,7 +795,13 @@ else
 
         try
         {
-            await Api.AddPlaylistByUrlAsync(RoomHash, _youtubeUrl);
+            await Api.AddPlaylistByUrlAsync(RoomHash, new AddPlaylistByUrlRequestModel
+            {
+                Url = _youtubeUrl.Trim(),
+                Shuffle = _shuffleOnAdd,
+                InsertMode = insertMode
+            });
+
             _youtubeUrl = "";
         }
         catch (Exception)
@@ -739,10 +815,87 @@ else
         }
     }
 
+    private async Task ShufflePlaylistNow()
+    {
+        if (_playlist.Count <= 1 || _isShufflingPlaylist)
+            return;
+
+        _isShufflingPlaylist = true;
+        StateHasChanged();
+
+        try
+        {
+            await Api.ShufflePlaylistAsync(RoomHash);
+        }
+        catch (Exception)
+        {
+            ShowToast("Não foi possível embaralhar a playlist agora.");
+        }
+        finally
+        {
+            _isShufflingPlaylist = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnPlaylistDragStart(Guid itemId)
+    {
+        _draggedPlaylistItemId = itemId;
+        _dragOverPlaylistIndex = null;
+    }
+
+    private void OnPlaylistDragOver(int targetIndex)
+    {
+        if (!_draggedPlaylistItemId.HasValue || _dragOverPlaylistIndex == targetIndex)
+            return;
+
+        _dragOverPlaylistIndex = targetIndex;
+    }
+
+    private void OnPlaylistDragEnd()
+    {
+        _draggedPlaylistItemId = null;
+        _dragOverPlaylistIndex = null;
+    }
+
+    private async Task OnPlaylistDrop(int targetIndex)
+    {
+        if (!_draggedPlaylistItemId.HasValue || _isReorderingPlaylist)
+        {
+            OnPlaylistDragEnd();
+            return;
+        }
+
+        var draggedItemId = _draggedPlaylistItemId.Value;
+        var sourceIndex = _playlist.FindIndex(x => x.Id == draggedItemId);
+        if (sourceIndex < 0 || sourceIndex == targetIndex)
+        {
+            OnPlaylistDragEnd();
+            return;
+        }
+
+        _isReorderingPlaylist = true;
+        _lastPlaylistDropAtUtc = DateTime.UtcNow;
+
+        try
+        {
+            await Api.ReorderPlaylistItemAsync(RoomHash, draggedItemId, targetIndex);
+        }
+        catch (Exception)
+        {
+            ShowToast("Não foi possível reordenar a playlist agora.");
+        }
+        finally
+        {
+            _isReorderingPlaylist = false;
+            OnPlaylistDragEnd();
+            StateHasChanged();
+        }
+    }
+
     private async Task RemoveVideo(Guid itemId)
     {
         await Api.RemoveFromPlaylistAsync(RoomHash, itemId);
-        _playlist.RemoveAll(p => p.Id == itemId);
     }
 
     private async Task SendChat()

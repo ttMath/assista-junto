@@ -12,6 +12,19 @@ public record PlaylistItemDto(
 
 public record AddToPlaylistRequest(string VideoId, string Title, string ThumbnailUrl);
 
-public record AddPlaylistByUrlRequest(string Url);
+public record ReorderPlaylistRequest(Guid ItemId, int TargetIndex);
+
+public enum PlaylistInsertMode
+{
+    End,
+    AfterCurrent,
+    PlayNow
+}
+
+public record AddPlaylistByUrlRequest(
+    string Url,
+    bool Shuffle = false,
+    PlaylistInsertMode InsertMode = PlaylistInsertMode.End
+);
 
 public record AddPlaylistByUrlResponse(List<PlaylistItemDto> Items, int TotalAdded);

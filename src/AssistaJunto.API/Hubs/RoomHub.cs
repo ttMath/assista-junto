@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using AssistaJunto.Application.DTOs;
 using AssistaJunto.Application.Interfaces;
 using AssistaJunto.Domain.Enums;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.SignalR;
 
 namespace AssistaJunto.API.Hubs;
@@ -11,6 +12,7 @@ public class RoomHub : Hub
     private readonly IRoomService _roomService;
     private readonly IChatService _chatService;
     private readonly IPlaylistService _playlistService;
+    private readonly ILogger<RoomHub> _logger;
 
     private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, RoomUserInfo>> _roomUsers = new();
     private static readonly ConcurrentDictionary<string, string> _connectionRooms = new();
@@ -20,11 +22,16 @@ public class RoomHub : Hub
     private const int ChatBurstWindowSeconds = 20;
     private const int ChatBlockSeconds = 60;
 
-    public RoomHub(IRoomService roomService, IChatService chatService, IPlaylistService playlistService)
+    public RoomHub(
+        IRoomService roomService,
+        IChatService chatService,
+        IPlaylistService playlistService,
+        ILogger<RoomHub> logger)
     {
         _roomService = roomService;
         _chatService = chatService;
         _playlistService = playlistService;
+        _logger = logger;
     }
 
     public async Task JoinRoom(string roomHash)
@@ -34,6 +41,18 @@ public class RoomHub : Hub
         var state = await _roomService.GetRoomStateAsync(roomHash);
         if (state is not null)
             await Clients.Caller.SendAsync("ReceiveRoomState", state);
+
+        List<ChatMessageDto> recentMessages = [];
+        try
+        {
+            recentMessages = await _chatService.GetRecentMessagesAsync(roomHash, 200);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha ao carregar histórico do chat para a sala {RoomHash}.", roomHash);
+        }
+
+        await Clients.Caller.SendAsync("ReceiveChatHistory", recentMessages);
 
         var username = GetUsername();
         var userInfo = new RoomUserInfo(username);
@@ -51,8 +70,9 @@ public class RoomHub : Hub
             {
                 await _roomService.IncrementUserCountAsync(roomHash);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Falha ao incrementar o total de usuários na sala {RoomHash}.", roomHash);
             }
         }
 
@@ -83,7 +103,14 @@ public class RoomHub : Hub
                 if (connCount <= 1)
                 {
                     userCounts.TryRemove(username, out _);
-                    try { await _roomService.DecrementUserCountAsync(roomHash); } catch { }
+                    try
+                    {
+                        await _roomService.DecrementUserCountAsync(roomHash);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Falha ao decrementar o total de usuários ao sair da sala {RoomHash}.", roomHash);
+                    }
                 }
                 else
                 {
@@ -122,7 +149,14 @@ public class RoomHub : Hub
                     if (connCount <= 1)
                     {
                         userCounts.TryRemove(username, out _);
-                        try { await _roomService.DecrementUserCountAsync(roomHash); } catch { }
+                        try
+                        {
+                            await _roomService.DecrementUserCountAsync(roomHash);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Falha ao decrementar o total de usuários na desconexão da sala {RoomHash}.", roomHash);
+                        }
                     }
                     else
                     {

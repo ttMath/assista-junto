@@ -13,6 +13,7 @@ public class RoomHubService : IAsyncDisposable
     public event Action<RoomStateModel>? OnRoomStateReceived;
     public event Action<PlayerActionModel>? OnPlayerActionReceived;
     public event Action<ChatMessageModel>? OnChatMessageReceived;
+    public event Action<List<ChatMessageModel>>? OnChatHistoryReceived;
     public event Action<PlaylistItemModel>? OnPlaylistUpdated;
     public event Action? OnPlaylistCleared;
     public event Action<RoomUserModel>? OnUserJoined;
@@ -47,6 +48,9 @@ public class RoomHubService : IAsyncDisposable
 
         _hubConnection.On<ChatMessageModel>("ReceiveChatMessage", message =>
             OnChatMessageReceived?.Invoke(message));
+
+        _hubConnection.On<List<ChatMessageModel>>("ReceiveChatHistory", messages =>
+            OnChatHistoryReceived?.Invoke(messages));
 
         _hubConnection.On<PlaylistItemModel>("PlaylistUpdated", item =>
             OnPlaylistUpdated?.Invoke(item));

@@ -1,0 +1,42 @@
+<button type="button"
+        class="@ButtonClass"
+        title="@CurrentTitle"
+        aria-label="@CurrentTitle"
+        @onclick="HandleToggle"
+        @attributes="AdditionalAttributes">
+    <img class="sound-toggle-icon" src="@CurrentIconPath" alt="" aria-hidden="true" />
+    <span>@CurrentText</span>
+</button>
+
+@code {
+    [Parameter] public bool IsMuted { get; set; }
+    [Parameter] public EventCallback OnToggle { get; set; }
+    [Parameter] public string ActiveText { get; set; } = "Som ativo";
+    [Parameter] public string MutedText { get; set; } = "Silenciado";
+    [Parameter] public string ActiveTitle { get; set; } = "Silenciar som";
+    [Parameter] public string MutedTitle { get; set; } = "Ativar som";
+    [Parameter] public string ActiveIconPath { get; set; } = "icons/sound-on.svg";
+    [Parameter] public string MutedIconPath { get; set; } = "icons/sound-off.svg";
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CurrentText => IsMuted ? MutedText : ActiveText;
+    private string CurrentTitle => IsMuted ? MutedTitle : ActiveTitle;
+    private string CurrentIconPath => IsMuted ? MutedIconPath : ActiveIconPath;
+
+    private string ButtonClass
+    {
+        get
+        {
+            var stateClass = IsMuted ? "is-muted" : "is-active";
+            return string.IsNullOrWhiteSpace(CssClass)
+                ? $"btn btn-sm sound-toggle-button {stateClass}"
+                : $"btn btn-sm sound-toggle-button {stateClass} {CssClass}";
+        }
+    }
+
+    private async Task HandleToggle()
+    {
+        await OnToggle.InvokeAsync();
+    }
+}

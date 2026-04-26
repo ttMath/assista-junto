@@ -1,0 +1,40 @@
+.sound-toggle-button {
+    border: 1px solid rgba(131, 146, 229, 0.42);
+    background: rgba(22, 30, 64, 0.75);
+    color: #eaf0ff;
+    min-height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding-inline: 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.sound-toggle-button:hover,
+.sound-toggle-button:focus {
+    color: #ffffff;
+    border-color: rgba(170, 184, 255, 0.8);
+    background: rgba(41, 53, 106, 0.9);
+}
+
+.sound-toggle-button.is-muted {
+    color: #ffc785;
+    border-color: rgba(255, 181, 86, 0.52);
+    background: rgba(73, 47, 16, 0.85);
+}
+
+.sound-toggle-button.is-active {
+    color: #abffcf;
+    border-color: rgba(95, 227, 156, 0.38);
+    background: rgba(14, 58, 36, 0.7);
+}
+
+.sound-toggle-icon {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+    display: block;
+}

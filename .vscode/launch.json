@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "AssistaJunto.Client",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}\\src\\AssistaJunto.Client\\AssistaJunto.Client.csproj",
+            "launchConfigurationId": "TargetFramework=;https"
+        },
+        {
+            "name": "AssistaJunto.API",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}\\src\\AssistaJunto.API\\AssistaJunto.API.csproj",
+            "launchConfigurationId": "TargetFramework=;https"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Assista Junto",
+            "configurations": ["AssistaJunto.Client", "AssistaJunto.API"]
+        }
+    ]
+}

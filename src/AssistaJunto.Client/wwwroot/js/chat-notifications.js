@@ -34,7 +34,7 @@ window.chatNotifications = (function () {
         gain.connect(context.destination);
 
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.21, now + 0.01);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
 
         const firstTone = context.createOscillator();

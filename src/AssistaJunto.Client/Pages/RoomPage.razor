@@ -93,10 +93,6 @@ else
                                     <span>+ Fila</span>
                                 }
                             </button>
-                            <button class="btn btn-outline-light copy-room-link-button" @onclick="CopyRoomUrl" title="Copiar URL da sala">
-                                <i class="bi bi-link-45deg me-1"></i>
-                                <span>Copiar URL</span>
-                            </button>
                         </div>
 
                         <div class="add-video-actions mt-2">
@@ -217,6 +213,13 @@ else
                                           IsNotificationMuted="_isChatNotificationMuted"
                                           OnToggleNotifications="ToggleChatNotificationMute" />
                             </div>
+                            <div class="room-link-box mt-3" aria-label="Link da sala">
+                                <span class="room-link-preview">@RoomUrlDisplay</span>
+                                <button class="btn copy-room-link-button" @onclick="CopyRoomUrl" title="Copiar URL da sala">
+                                    <i class="bi bi-link-45deg me-2"></i>
+                                    <span>Copiar URL</span>
+                                </button>
+                            </div>
                         }
                         else
                         {
@@ -242,6 +245,16 @@ else
 
 @code {
     [Parameter] public string RoomHash { get; set; } = "";
+
+    private string RoomUrl => Nav.ToAbsoluteUri($"/sala/{RoomHash}").ToString();
+    private string RoomUrlDisplay
+    {
+        get
+        {
+            var uri = Nav.ToAbsoluteUri($"/sala/{RoomHash}");
+            return $"{uri.Host}{uri.AbsolutePath}";
+        }
+    }
 
     private RoomModel? _room;
     private List<PlaylistItemModel> _playlist = [];
@@ -321,11 +334,9 @@ else
 
     private async Task CopyRoomUrl()
     {
-        var roomUrl = Nav.ToAbsoluteUri($"/sala/{RoomHash}").ToString();
-
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", roomUrl);
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", RoomUrl);
             ShowToast("URL da sala copiada.");
         }
         catch

@@ -297,6 +297,38 @@
     overflow: hidden;
 }
 
+.room-link-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    border-radius: 0.85rem;
+    border: 1px solid rgba(129, 144, 232, 0.35);
+    background: rgba(10, 14, 30, 0.85);
+}
+
+.room-link-preview {
+    font-style: italic;
+    font-size: 1.1rem;
+    color: #d7defe;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.copy-room-link-button {
+    border: 0;
+    border-radius: 999px;
+    padding: 0.45rem 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, #6f7bff, #4e5dff);
+    box-shadow: 0 12px 24px rgba(22, 34, 92, 0.45);
+}
+
+
 .users-tab-panel {
     max-height: 520px;
     overflow-y: auto;

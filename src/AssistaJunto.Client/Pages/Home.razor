@@ -6,6 +6,12 @@
 
 <PageTitle>Assista Junto</PageTitle>
 
+<HeadContent>
+    <meta name="description" content="Assista vídeos do YouTube em grupo com sincronização em tempo real. Crie salas, compartilhe links e acompanhe junto com sua comunidade." />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="@HomeCanonicalUrl" />
+</HeadContent>
+
 @if (!_initialized)
 {
     <div class="d-flex flex-column justify-content-center align-items-center vh-100">
@@ -103,6 +109,7 @@ else
     private string _nameInput = "";
     private bool _initialized;
     private string? _nameValidationMessage;
+    private string HomeCanonicalUrl => Nav.ToAbsoluteUri("/").ToString();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

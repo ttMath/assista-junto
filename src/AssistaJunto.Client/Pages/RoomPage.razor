@@ -10,6 +10,11 @@
 
 <PageTitle>Sala — Assista Junto</PageTitle>
 
+<HeadContent>
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <meta name="googlebot" content="noindex,nofollow,noarchive" />
+</HeadContent>
+
 <div class="position-fixed top-0 end-0 p-3" style="z-index:1080">
     @foreach (var toast in _toasts)
     {
@@ -208,6 +213,13 @@ else
                                           IsNotificationMuted="_isChatNotificationMuted"
                                           OnToggleNotifications="ToggleChatNotificationMute" />
                             </div>
+                            <div class="room-link-box mt-3" aria-label="Link da sala">
+                                <span class="room-link-preview">@RoomUrlDisplay</span>
+                                <button class="btn copy-room-link-button" @onclick="CopyRoomUrl" title="Copiar URL da sala">
+                                    <i class="bi bi-link-45deg me-2"></i>
+                                    <span>Copiar URL</span>
+                                </button>
+                            </div>
                         }
                         else
                         {
@@ -233,6 +245,16 @@ else
 
 @code {
     [Parameter] public string RoomHash { get; set; } = "";
+
+    private string RoomUrl => Nav.ToAbsoluteUri($"/sala/{RoomHash}").ToString();
+    private string RoomUrlDisplay
+    {
+        get
+        {
+            var uri = Nav.ToAbsoluteUri($"/sala/{RoomHash}");
+            return $"{uri.Host}{uri.AbsolutePath}";
+        }
+    }
 
     private RoomModel? _room;
     private List<PlaylistItemModel> _playlist = [];
@@ -307,6 +329,19 @@ else
         catch (InvalidOperationException ex)
         {
             ShowToast(ex.Message);
+        }
+    }
+
+    private async Task CopyRoomUrl()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", RoomUrl);
+            ShowToast("URL da sala copiada.");
+        }
+        catch
+        {
+            ShowToast("Não foi possível copiar a URL da sala.");
         }
     }
 

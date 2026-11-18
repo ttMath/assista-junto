@@ -6,6 +6,11 @@
 # Artifacts de build locais
 **/bin
 **/obj
+**/node_modules
+**/.certs
+**/dist
+**/playwright-report
+**/test-results
 
 # Git
 **/.git

@@ -1,0 +1,375 @@
+/* Preserved from AssistaJunto.Client/Pages/RoomPage.razor.css */
+.legacy-room {
+.room-shell {
+    min-height: calc(100vh - 64px);
+    background:
+        radial-gradient(circle at 10% 20%, rgba(81, 92, 255, 0.15), transparent 32%),
+        radial-gradient(circle at 90% 0%, rgba(0, 190, 214, 0.14), transparent 26%),
+        #05060f;
+}
+
+.room-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.room-main-column,
+.room-side-column {
+    min-width: 0;
+}
+
+.room-side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.room-main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.room-overline {
+    color: #8f99c4;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.room-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #d5dbff;
+    background: rgba(79, 92, 255, 0.16);
+    border: 1px solid rgba(112, 124, 255, 0.32);
+    border-radius: 999px;
+    padding: 0.4rem 0.72rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.room-status-pill .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #35e089;
+    box-shadow: 0 0 0.7rem rgba(53, 224, 137, 0.85);
+}
+
+.player-stage {
+    border: 1px solid rgba(126, 137, 212, 0.28);
+    border-radius: 1rem;
+    background: rgba(9, 12, 24, 0.82);
+    padding: 0.7rem;
+    box-shadow: 0 24px 44px rgba(0, 0, 0, 0.45);
+}
+
+.side-panel {
+    border: 1px solid rgba(128, 140, 214, 0.24);
+    border-radius: 1rem;
+    background: rgba(7, 10, 21, 0.82);
+    box-shadow: 0 14px 28px rgba(1, 2, 12, 0.42);
+}
+
+.side-panel {
+    padding: 0.95rem;
+}
+
+.users-spotlight-panel {
+    background: linear-gradient(170deg, rgba(20, 26, 55, 0.9), rgba(8, 11, 24, 0.9));
+    border-color: rgba(137, 149, 236, 0.45);
+}
+
+.room-users-count {
+    font-size: 0.76rem;
+    padding: 0.26rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(90, 103, 223, 0.18);
+    color: #d6ddff;
+    border: 1px solid rgba(121, 134, 233, 0.38);
+}
+
+.add-video-input {
+    border-color: rgba(123, 137, 230, 0.24);
+    background: rgba(20, 25, 46, 0.72);
+    color: #f5f7ff;
+}
+
+.add-video-input::placeholder {
+    color: #8d98c7;
+}
+
+.add-video-input:focus {
+    color: #fff;
+    background: rgba(24, 30, 56, 0.88);
+    border-color: rgba(111, 123, 255, 0.82);
+    box-shadow: 0 0 0 0.2rem rgba(95, 108, 255, 0.18);
+}
+
+.add-video-button {
+    border: 0;
+    background: linear-gradient(135deg, #6f7bff, #4e5dff);
+    font-weight: 700;
+}
+
+.add-video-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.add-action-btn {
+    border-color: rgba(125, 140, 232, 0.35);
+    background: rgba(18, 24, 48, 0.78);
+    color: #e6ebff;
+    font-weight: 600;
+}
+
+.add-action-btn:hover {
+    border-color: rgba(155, 168, 255, 0.58);
+    background: rgba(29, 37, 72, 0.9);
+    color: #fff;
+}
+
+.add-shuffle-toggle {
+    border: 1px dashed rgba(125, 199, 255, 0.48);
+    background: rgba(11, 34, 50, 0.7);
+    color: #9ddcff;
+    font-weight: 700;
+}
+
+.add-shuffle-toggle:hover {
+    border-color: rgba(141, 219, 255, 0.72);
+    background: rgba(14, 44, 66, 0.86);
+    color: #d9f5ff;
+}
+
+.add-shuffle-toggle.active {
+    border-style: solid;
+    border-color: rgba(118, 225, 255, 0.76);
+    background: linear-gradient(135deg, rgba(21, 119, 151, 0.6), rgba(15, 71, 116, 0.66));
+    color: #f1fcff;
+}
+
+.playlist-panel {
+    max-height: 365px;
+    display: flex;
+    flex-direction: column;
+}
+
+.playlist-actions {
+    display: inline-flex;
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.social-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 420px;
+}
+
+.social-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.social-tab-btn {
+    border: 1px solid rgba(123, 136, 222, 0.28);
+    background: rgba(16, 21, 43, 0.72);
+    color: #d9e0ff;
+    border-radius: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.social-tab-btn:hover {
+    border-color: rgba(148, 160, 248, 0.45);
+    background: rgba(22, 28, 55, 0.85);
+}
+
+.social-tab-btn.active {
+    border-color: rgba(143, 154, 255, 0.72);
+    background: linear-gradient(130deg, rgba(79, 93, 255, 0.28), rgba(30, 38, 82, 0.78));
+    color: #fff;
+}
+
+.tab-counter {
+    margin-left: 0.45rem;
+    padding: 0.05rem 0.42rem;
+    border-radius: 999px;
+    border: 1px solid rgba(145, 156, 248, 0.45);
+    background: rgba(111, 123, 255, 0.16);
+    font-size: 0.72rem;
+}
+
+.playlist-scroll {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding-right: 0.15rem;
+}
+
+.playlist-item {
+    border: 1px solid rgba(126, 137, 212, 0.24);
+    border-radius: 0.75rem;
+    background: rgba(15, 20, 40, 0.68);
+    color: #f8faff;
+    width: 100%;
+    padding: 0.52rem;
+    transition: all 0.18s ease;
+}
+
+.playlist-item:hover {
+    transform: translateY(-1px);
+    border-color: rgba(141, 154, 239, 0.38);
+    background: rgba(19, 25, 50, 0.9);
+}
+
+.playlist-item.active {
+    border-color: rgba(138, 150, 255, 0.78);
+    background: rgba(79, 93, 255, 0.18);
+}
+
+.playlist-item.drop-target {
+    border-color: rgba(120, 213, 255, 0.84);
+    box-shadow: inset 0 0 0 1px rgba(130, 223, 255, 0.45);
+}
+
+.playlist-item.dragging-source {
+    opacity: 0.65;
+}
+
+.drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.5rem;
+    height: 2.2rem;
+    border-radius: 0.45rem;
+    color: #9aa7e8;
+    background: rgba(69, 81, 158, 0.18);
+    border: 1px dashed rgba(141, 154, 236, 0.42);
+    cursor: grab;
+    flex: 0 0 auto;
+}
+
+.drag-handle-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.drag-handle:hover {
+    color: #e4e9ff;
+    border-color: rgba(172, 184, 255, 0.68);
+    background: rgba(86, 101, 190, 0.28);
+}
+
+.drag-handle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(151, 170, 255, 0.45);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.playlist-thumb {
+    border-radius: 0.55rem;
+    object-fit: cover;
+    height: 52px;
+}
+
+.chat-panel {
+    flex: 1;
+    min-height: 0;
+    max-height: 520px;
+    overflow: hidden;
+}
+
+.room-link-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    border-radius: 0.85rem;
+    border: 1px solid rgba(129, 144, 232, 0.35);
+    background: rgba(10, 14, 30, 0.85);
+}
+
+.room-link-preview {
+    font-style: italic;
+    font-size: 1.1rem;
+    color: #d7defe;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.copy-room-link-button {
+    border: 0;
+    border-radius: 999px;
+    padding: 0.45rem 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, #6f7bff, #4e5dff);
+    box-shadow: 0 12px 24px rgba(22, 34, 92, 0.45);
+}
+
+
+.users-tab-panel {
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+}
+
+.adding-info {
+    display: inline-flex;
+    align-items: center;
+    color: #96dcff;
+}
+
+.custom-toast {
+    background: linear-gradient(135deg, #6f7bff, #4653df);
+    color: #fff;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(178, 187, 255, 0.32);
+    box-shadow: 0 14px 28px rgba(20, 28, 88, 0.48);
+}
+
+@media (min-width: 1200px) {
+    .room-grid {
+        grid-template-columns: minmax(0, 1.6fr) minmax(360px, 0.9fr);
+        align-items: start;
+    }
+}
+
+@media (max-width: 1199px) {
+    .room-side-column {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        align-items: start;
+    }
+
+    .chat-panel {
+        max-height: 480px;
+    }
+}
+
+
+}
+

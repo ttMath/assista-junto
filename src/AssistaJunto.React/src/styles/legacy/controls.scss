@@ -1,0 +1,132 @@
+/* Preserved from AssistaJunto.Client/Components/VideoControls.razor.css */
+.legacy-controls {
+.controls-pill {
+    background: rgba(10, 13, 29, 0.85);
+    border: 1px solid rgba(130, 142, 214, 0.28);
+    border-radius: 500px;
+    width: 100%;
+    justify-content: center;
+    margin: 16px auto 0;
+    user-select: none;
+}
+
+.v-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-play-pause {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #6f7bff, #4f5dff);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.play-glow {
+    box-shadow: 0 0 15px rgba(88, 101, 242, 0.5);
+}
+
+.pause-glow {
+    box-shadow: 0 0 15px rgba(88, 101, 242, 0.3);
+}
+
+.btn-play-pause:hover {
+    transform: scale(1.08);
+    background: linear-gradient(135deg, #7c88ff, #5a68ff);
+    box-shadow: 0 0 25px rgba(88, 101, 242, 0.6);
+}
+
+.btn-icon-secondary {
+    background: transparent;
+    border: none;
+    color: #8a8e94;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+    .btn-icon-secondary:hover {
+        color: #ffffff;
+    }
+
+.volume-slider-container {
+    position: relative;
+    width: 100px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.volume-track {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: #2b2d31;
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.volume-fill {
+    height: 100%;
+    background: #5865F2;
+    border-radius: 2px;
+}
+
+.volume-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    -webkit-appearance: none;
+    cursor: pointer;
+    margin: 0;
+    z-index: 3;
+}
+
+    .volume-input::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        border: none;
+        transition: transform 0.1s;
+    }
+
+    .volume-input:active::-webkit-slider-thumb {
+        transform: scale(1.2);
+    }
+
+.volume-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #9ca7ff;
+    width: 32px;
+}
+
+@media (max-width: 576px) {
+    .controls-pill {
+        border-radius: 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .v-divider {
+        display: none;
+    }
+}
+
+}
+

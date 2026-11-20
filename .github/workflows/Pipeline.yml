@@ -17,13 +17,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare Compose environment for validation
+        run: cp .env.example .env
+
+      - name: Set up Node for container checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+
       - name: Build validation
         env:
           ACME_EMAIL: ci@example.com
           POSTGRES_USER: ci
           POSTGRES_PASSWORD: ci
           POSTGRES_DB: ci
-        run: docker compose -f docker-compose.yml build --pull api client pipocabot
+        run: docker compose -p assistajunto-ci -f docker-compose.yml build --pull api client pipocabot
+
+      - name: Validate React container
+        env:
+          REACT_TEST_IMAGE: assistajunto-ci-client
+        run: node --test tests/docker/react-container.test.mjs
 
   cd:
     name: Deploy
@@ -40,8 +53,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
-            cd ${{ secrets.DEPLOY_PATH }}
+            set -eu
+            cd "${{ secrets.DEPLOY_PATH }}"
             git fetch origin main
             git reset --hard origin/main
-            docker compose up -d --build --remove-orphans
+            docker compose -f docker-compose.yml up -d --build --remove-orphans --wait --wait-timeout 120
             docker image prune -f

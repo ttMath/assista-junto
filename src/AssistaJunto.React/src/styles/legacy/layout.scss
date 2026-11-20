@@ -1,0 +1,102 @@
+/* Preserved from AssistaJunto.Client/Layout/MainLayout.razor.css */
+.legacy-layout {
+.page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #05060f;
+}
+
+.top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1040;
+    backdrop-filter: blur(14px);
+    background: linear-gradient(90deg, rgba(9, 12, 27, 0.92), rgba(7, 8, 18, 0.82));
+    border-bottom: 1px solid rgba(133, 144, 204, 0.24);
+}
+
+.content-area {
+    flex: 1;
+    padding: 0;
+}
+
+.home-btn {
+    background: transparent;
+    border: none;
+    transition: opacity 0.2s ease;
+}
+
+.home-btn:hover {
+    opacity: 0.9;
+}
+
+.user-name-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #f2f3f5;
+    border-radius: 20px;
+    padding: 4px 14px 4px 6px;
+    transition: all 0.2s ease;
+}
+
+    .user-name-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+
+    .user-name-btn svg {
+        opacity: 0.5;
+        transition: opacity 0.2s;
+    }
+
+    .user-name-btn:hover svg {
+        opacity: 1;
+    }
+
+.edit-name-input {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 6px;
+    width: 180px;
+    font-size: 0.85rem;
+}
+
+    .edit-name-input:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #6f7bff;
+        color: white;
+        box-shadow: 0 0 0 2px rgba(111, 123, 255, 0.28);
+    }
+
+.btn-logout {
+    border-color: rgba(255, 255, 255, 0.34);
+}
+
+.btn-logout:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.name-edit-alert {
+    padding: 0.5rem 1rem;
+    font-size: 0.82rem;
+    color: #ffd3db;
+    background: rgba(114, 15, 33, 0.44);
+    border-bottom: 1px solid rgba(255, 128, 157, 0.35);
+}
+
+.modal-overlay {
+    background: rgba(4, 6, 14, 0.78);
+    backdrop-filter: blur(8px);
+    z-index: 1080;
+}
+
+.leave-room-modal {
+    background: linear-gradient(160deg, rgba(11, 16, 37, 0.96), rgba(8, 10, 22, 0.96));
+    border: 1px solid rgba(124, 138, 233, 0.34);
+}
+
+}
+

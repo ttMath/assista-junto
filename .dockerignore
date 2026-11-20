@@ -6,6 +6,16 @@
 # Artifacts de build locais
 **/bin
 **/obj
+**/node_modules
+**/.certs
+**/dist
+**/playwright-report
+**/test-results
+**/TestResults
+**/coverage
+artifacts/
+**/appsettings.Development.json
+**/appsettings.*.local.json
 
 # Git
 **/.git
@@ -14,4 +24,5 @@
 
 # Visual Studio
 **/.vs
+**/.vscode
 **/*.user

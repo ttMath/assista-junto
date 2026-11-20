@@ -1,4 +1,20 @@
 <Solution>
+  <Folder Name="/Frontends/React/">
+    <File Path="src/AssistaJunto.React/package.json" />
+    <File Path="src/AssistaJunto.React/vite.config.ts" />
+    <File Path="src/AssistaJunto.React/src/main.tsx" />
+    <File Path="react-client.Dockerfile" />
+    <File Path="docker-compose.react.yml" />
+  </Folder>
+  <Folder Name="/Migration/">
+    <File Path="MIGRATION_INVENTORY.md" />
+    <File Path="MIGRATION_ARCHITECTURE.md" />
+    <File Path="MIGRATION_VALIDATION.md" />
+    <File Path="MIGRATION_ROLLBACK.md" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AssistaJunto.MigrationHost/AssistaJunto.MigrationHost.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".env" />
     <File Path=".env.example" />

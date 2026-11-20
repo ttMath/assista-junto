@@ -1,0 +1,74 @@
+/* Preserved from AssistaJunto.Client/Components/UserList.razor.css */
+.legacy-users {
+.fw-black {
+    font-weight: 900;
+}
+
+.ls-wider {
+    letter-spacing: 0.1em;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #39df8f;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #39df8f;
+}
+
+.users-title {
+    font-size: 0.8rem;
+}
+
+.user-card-pill {
+    background: rgba(80, 94, 180, 0.12);
+    border: 1px solid rgba(132, 145, 230, 0.24);
+    backdrop-filter: blur(10px);
+    padding: 6px 14px 6px 8px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+    .user-card-pill:hover {
+        background: rgba(96, 111, 219, 0.22);
+        border-color: #7484ff;
+        transform: translateY(-2px);
+    }
+
+.avatar-wrapper {
+    position: relative;
+    display: flex;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 10px;
+    height: 10px;
+    background-color: #39df8f;
+    border: 2px solid #0a0e1f;
+    border-radius: 50%;
+}
+
+.user-name {
+    color: #f2f3f5;
+    font-weight: 600;
+    font-size: 0.85rem;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.owner-badge {
+    font-size: 0.75rem;
+    margin-left: -2px;
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+}
+}
+

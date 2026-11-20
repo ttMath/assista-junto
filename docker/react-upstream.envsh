@@ -1,0 +1,9 @@
+#!/bin/sh
+# Sourced before nginx envsubst; keep the upstream an origin so paths stay intact.
+REACT_API_UPSTREAM="${REACT_API_UPSTREAM:-http://api:5000}"
+REACT_API_UPSTREAM="${REACT_API_UPSTREAM%/}"
+if ! printf '%s' "$REACT_API_UPSTREAM" | grep -Eq '^https?://(\[[0-9A-Fa-f:]+\]|[A-Za-z0-9._-]+)(:[0-9]+)?$'; then
+    echo >&2 'REACT_API_UPSTREAM must be an HTTP(S) origin without a path, credentials or query.'
+    exit 1
+fi
+export REACT_API_UPSTREAM

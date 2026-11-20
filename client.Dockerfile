@@ -14,6 +14,7 @@ FROM nginx:alpine
 COPY --from=build /app/publish/wwwroot /usr/share/nginx/html
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/client-entrypoint.sh /docker-entrypoint.d/40-blazor-config.sh
-RUN chmod +x /docker-entrypoint.d/40-blazor-config.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-blazor-config.sh \
+    && chmod +x /docker-entrypoint.d/40-blazor-config.sh
 
 EXPOSE 3000

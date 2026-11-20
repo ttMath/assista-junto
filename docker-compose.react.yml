@@ -1,0 +1,20 @@
+# Preview React independente; o servico client do compose principal ja publica React.
+# Esta instancia usa apenas a porta local, sem duplicar as rotas de producao no Traefik.
+# docker compose -f docker-compose.yml -f docker-compose.react.yml --profile react ...
+services:
+  react-client:
+    profiles: [react]
+    build:
+      context: .
+      dockerfile: react-client.Dockerfile
+    restart: unless-stopped
+    environment:
+      REACT_API_UPSTREAM: ${REACT_API_UPSTREAM:-http://api:5000}
+    ports:
+      - "127.0.0.1:${REACT_CLIENT_PORT:-3001}:3000"
+    depends_on:
+      - api
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=false

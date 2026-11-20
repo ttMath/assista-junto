@@ -1,0 +1,45 @@
+name: React migration validation
+on:
+  pull_request:
+    paths:
+      - 'src/AssistaJunto.React/**'
+      - 'tests/AssistaJunto.MigrationHost/**'
+      - 'src/AssistaJunto.API/**'
+      - 'src/AssistaJunto.Application/**'
+      - 'src/AssistaJunto.Domain/**'
+      - 'react-client.Dockerfile'
+      - 'docker-compose.yml'
+      - 'docker-compose.react.yml'
+      - 'docker-compose.blazor.yml'
+      - 'docker/react-nginx.conf.template'
+      - 'docker/react-upstream.envsh'
+      - '.dockerignore'
+      - '.gitattributes'
+      - 'tests/docker/**'
+      - '.github/workflows/react-validation.yml'
+  workflow_dispatch:
+jobs:
+  react:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: src/AssistaJunto.React/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: npm ci
+        working-directory: src/AssistaJunto.React
+      - run: npm run check
+        working-directory: src/AssistaJunto.React
+      - run: npx playwright install --with-deps chromium
+        working-directory: src/AssistaJunto.React
+      - run: npm run test:e2e
+        working-directory: src/AssistaJunto.React
+      - run: docker build -t assistajunto-react:container-test -f react-client.Dockerfile .
+      - run: node --test tests/docker/react-container.test.mjs
+        env:
+          REACT_TEST_IMAGE: assistajunto-react:container-test

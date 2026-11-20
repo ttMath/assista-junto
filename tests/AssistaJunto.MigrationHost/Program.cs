@@ -93,3 +93,6 @@ sealed class MemoryChat : IChatMessageRepository
         .Where(message => message.RoomId == roomId).OrderByDescending(message => message.SentAt).Take(take).OrderBy(message => message.SentAt).ToList());
     public Task AddAsync(ChatMessage message) { messages.Add(message); return Task.CompletedTask; }
 }
+
+// Exposes this isolated host to WebApplicationFactory-based .NET tests.
+public partial class Program { }

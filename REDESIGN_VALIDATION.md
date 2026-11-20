@@ -152,3 +152,18 @@ Não foram executados a API de produção, o bot Discord, migrations ou deploy r
 - [Proxy e resolução de nomes em variáveis nginx](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass).
 - [Entrypoint e envsubst da imagem nginx oficial](https://hub.docker.com/_/nginx/), [descoberta de resolvers](https://github.com/nginx/docker-nginx/blob/master/entrypoint/15-local-resolvers.envsh).
 - [Cache de pacotes no BuildKit](https://docs.docker.com/build/cache/optimize/).
+
+## Validação do projeto .NET — 20/11/2026
+
+Criado `tests/AssistaJunto.Tests`, projeto C# .NET 10 com xUnit, incluído na solução. A API de produção não foi modificada. O host isolado existente recebeu apenas a declaração pública parcial de `Program` necessária ao `WebApplicationFactory`.
+
+Criado `.github/workflows/dotnet-validation.yml`, reutilizável e executável manualmente, com `actions/checkout@v7`, `actions/setup-dotnet@v6`, SDK `10.0.x`, restore/build da API e restore/build/test dos testes. O pipeline chama esse workflow em um job próprio e o deploy passa a depender de `ci` e `dotnet`. A validação .NET não executa npm nem depende do React.
+
+Validação local efetivamente executada:
+
+- Build Release de `src/AssistaJunto.API/AssistaJunto.API.csproj`: sucesso, zero erros. Os avisos NuGet preexistentes descritos anteriormente permanecem.
+- Restore e build Release de `tests/AssistaJunto.Tests/AssistaJunto.Tests.csproj`: sucesso.
+- `dotnet test ... --no-build --no-restore --logger trx --results-directory artifacts/dotnet-tests`: **23 testes passaram**, sem falhas ou skips. Relatório TRX disponível em `artifacts/dotnet-tests/`.
+- Cobertura funcional: senha, identidade Unicode, limite/duplicação de salas, exclusão somente pelo dono, reorder e remoção preservando o vídeo atual, limpeza, navegação, shuffle, posição/progresso com índice desatualizado, chat, histórico, antispam, presença e reentrada pelo SignalR.
+
+Os testes HTTP e SignalR usam o host em memória, com endpoints e serviços reais, por TestServer/Long Polling. Não validam EF/PostgreSQL, migrations ou os middlewares CORS/rate limiting do bootstrap de produção. Não foi executado workflow remoto nesta sessão. Referências: [testes xUnit com dotnet test](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-csharp-with-xunit), [integração ASP.NET Core com WebApplicationFactory](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-10.0).

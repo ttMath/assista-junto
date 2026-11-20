@@ -14,6 +14,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AssistaJunto.MigrationHost/AssistaJunto.MigrationHost.csproj" />
+    <Project Path="tests/AssistaJunto.Tests/AssistaJunto.Tests.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".env" />

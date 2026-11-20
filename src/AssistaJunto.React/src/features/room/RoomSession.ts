@@ -10,7 +10,7 @@ import { reorderPlaylist, sameOrder } from './playlist';
 export interface SessionState extends RoomState {
   messages: ChatMessage[]; users: RoomUser[]; toasts: Toast[];
   connection: ConnectionStatus; volume: number; muted: boolean; notificationMuted: boolean;
-  blockedSeconds: number; blockMessage: string; reordering: boolean; playerReady: boolean;
+  blockedSeconds: number; blockMessage: string; reordering: boolean; playerReady: boolean; chatActivity: number;
 }
 export type Transport = Pick<RoomConnection, 'start' | 'dispose' | 'connected' | 'sendAction' | 'sendChat' | 'sync' | 'jump' | 'progress'>;
 export type ConnectionFactory = (events: RoomEvents, status: (status: ConnectionStatus) => void, error: (error: unknown) => void) => Transport;
@@ -35,7 +35,7 @@ export class RoomSession {
       ...(initial ?? { playlist: room.playlist, currentVideoIndex: room.currentVideoIndex, currentTime: room.currentTime,
         isPlaying: room.isPlaying, videoId: room.playlist[room.currentVideoIndex]?.videoId ?? null }),
       messages: [], users: [], toasts: [], connection: 'connecting', volume: 80, muted: false, notificationMuted: false,
-      blockedSeconds: 0, blockMessage: '', reordering: false, playerReady: false,
+      blockedSeconds: 0, blockMessage: '', reordering: false, playerReady: false, chatActivity: 0,
     };
     const events: RoomEvents = {
       ReceiveRoomState: state => this.receiveState(state),
@@ -43,8 +43,9 @@ export class RoomSession {
       ReceiveChatHistory: messages => this.patch({ messages: mergeMessages(this.state.messages, messages ?? []) }),
       ReceiveChatMessage: message => {
         if (this.state.messages.some(item => item.id === message.id)) return;
-        this.patch({ messages: [...this.state.messages, message] });
-        if (!this.state.notificationMuted && message.userDisplayName.toLowerCase() !== getUsername()?.toLowerCase()) {
+        const fromAnotherUser = message.userDisplayName.toLowerCase() !== getUsername()?.toLowerCase();
+        this.patch({ messages: [...this.state.messages, message], chatActivity: this.state.chatActivity + (fromAnotherUser ? 1 : 0) });
+        if (!this.state.notificationMuted && fromAnotherUser) {
           void playChatAlert().catch(() => { /* Audio is optional when autoplay is blocked. */ });
         }
       },
@@ -144,6 +145,16 @@ export class RoomSession {
     this.player?.play();
   };
   pause = () => { this.player?.pause(); };
+  playback = () => ({ time: this.playerReady ? this.player?.time() ?? 0 : 0, duration: this.playerReady ? this.player?.duration() ?? 0 : 0 });
+  seekTo = async (time: number) => {
+    if (!this.playerReady || !this.connection.connected || !Number.isFinite(time)) return;
+    const duration = this.player?.duration() ?? 0;
+    if (duration <= 0) return;
+    const target = Math.max(0, Math.min(time, duration));
+    this.player?.seek(target);
+    this.patch({ currentTime: target });
+    await this.sendAction(PlayerAction.SeekTo, target);
+  };
   next = async () => { await this.sendAction(PlayerAction.NextVideo); await this.connection.sync(); };
   previous = async () => { await this.sendAction(PlayerAction.PreviousVideo); await this.connection.sync(); };
   jump = async (index: number) => { if (index !== this.state.currentVideoIndex) await this.connection.jump(index); };

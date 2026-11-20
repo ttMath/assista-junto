@@ -4,7 +4,7 @@
 
 `src/AssistaJunto.Client` continua sendo o frontend Blazor completo, com seu projeto na solução, Dockerfile, configurações e recursos originais. Nenhum arquivo desse projeto foi alterado pela migração. O frontend React vive em `src/AssistaJunto.React`, possui build próprio e não precisa compilar nem executar o Blazor.
 
-O compose e pipeline originais continuam selecionando o Blazor para produção. O React é opt-in via compose adicional, porta própria e sem roteamento Traefik automático. Não foi realizado deploy.
+Após a solicitação de troca em 20/11/2026, o Compose principal e o pipeline selecionam React no serviço `client`, preservando as rotas Traefik do domínio principal. O Blazor continua disponível pelo override `docker-compose.blazor.yml`. O compose adicional React permanece como preview local, sem duplicar as rotas de produção. A alteração dos arquivos não equivale à execução de um deploy remoto; consulte `MIGRATION_ROLLBACK.md` para aplicar ou reverter a seleção.
 
 ## Organização
 

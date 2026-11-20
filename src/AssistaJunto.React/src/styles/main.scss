@@ -1,21 +1,7 @@
-@use './legacy/app.css';
-@use './legacy/layout';
-@use './legacy/home';
-@use './legacy/room';
-@use './legacy/controls';
-@use './legacy/chat';
-@use './legacy/users';
-@use './legacy/sound';
-@use './legacy/create';
-@use './legacy/password';
-
-// Replace invalid nested buttons with a row and independent controls.
-.playlist-select {
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: inherit;
-  min-width: 0;
-}
-.room-access-error { position: fixed; inset: auto 1rem 1rem; z-index: 2100; }
-.legacy-name .modal-overlay { background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(12px); }
+@use './tokens';
+@use './base';
+@use './layout';
+@use './room';
+@use './panels';
+@use './dialogs';
+@use './home';

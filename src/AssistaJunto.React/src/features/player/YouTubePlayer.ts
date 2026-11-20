@@ -7,13 +7,13 @@ export interface PlayerCallbacks {
 export interface PlayerPort {
   load(videoId: string, time: number, playing: boolean): void;
   play(): void; pause(): void; stop(): void; seek(time: number): void;
-  time(): number; volume(value: number): void; mute(value: boolean): void; destroy(): void;
+  time(): number; duration(): number; volume(value: number): void; mute(value: boolean): void; destroy(): void;
 }
 interface YTInstance {
   loadVideoById(video: { videoId: string; startSeconds: number }): void;
   cueVideoById(video: { videoId: string; startSeconds: number }): void;
   playVideo(): void; pauseVideo(): void; stopVideo(): void; seekTo(time: number, allowSeekAhead: boolean): void;
-  getCurrentTime(): number; setVolume(value: number): void; mute(): void; unMute(): void; destroy(): void;
+  getCurrentTime(): number; getDuration(): number; setVolume(value: number): void; mute(): void; unMute(): void; destroy(): void;
 }
 interface YTApi {
   Player: new (element: HTMLElement, options: {
@@ -55,7 +55,7 @@ export class YouTubePlayer implements PlayerPort {
       if (this.disposed) return;
       this.player = new api.Player(element, {
         width: '100%', height: '100%',
-        playerVars: { autoplay: 0, controls: 1, rel: 0, modestbranding: 1, origin: window.location.origin },
+        playerVars: { autoplay: 0, controls: 1, rel: 0, modestbranding: 1, playsinline: 1, origin: window.location.origin },
         events: {
           onReady: () => { if (!this.disposed) { this.ready = true; callbacks.ready(); } },
           onStateChange: event => { if (!this.disposed) this.onState(event.data); },
@@ -87,6 +87,7 @@ export class YouTubePlayer implements PlayerPort {
   stop() { if (this.ready) this.player?.stopVideo(); }
   seek(time: number) { if (this.ready) { this.lastTime = time; this.player?.seekTo(time, true); } }
   time() { return this.ready ? this.player?.getCurrentTime() ?? 0 : 0; }
+  duration() { return this.ready ? this.player?.getDuration() ?? 0 : 0; }
   volume(value: number) { if (this.ready) this.player?.setVolume(value); }
   mute(value: boolean) { if (this.ready) { if (value) this.player?.mute(); else this.player?.unMute(); } }
   destroy() { this.disposed = true; this.stopTracker(); this.player?.destroy(); this.player = undefined; this.ready = false; }

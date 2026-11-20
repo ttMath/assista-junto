@@ -1,0 +1,8 @@
+# Rollback do frontend no mesmo dominio, preservando API, banco e volumes.
+# docker compose -f docker-compose.yml -f docker-compose.blazor.yml build client
+# docker compose -f docker-compose.yml -f docker-compose.blazor.yml up -d --no-deps client
+services:
+  client:
+    build:
+      dockerfile: client.Dockerfile
+    env_file: .env

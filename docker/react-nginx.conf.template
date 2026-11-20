@@ -2,27 +2,48 @@ map $http_upgrade $connection_upgrade {
     default upgrade;
     '' close;
 }
+map $http_x_forwarded_proto $forwarded_proto {
+    default $scheme;
+    http http;
+    https https;
+}
 server {
     listen 3000;
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
+    server_tokens off;
 
-    location /api/ {
-        proxy_pass ${REACT_API_UPSTREAM};
-        proxy_http_version 1.1;
-        proxy_set_header Host $proxy_host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-    location /hubs/ {
-        proxy_pass ${REACT_API_UPSTREAM};
-        proxy_http_version 1.1;
-        proxy_set_header Host $proxy_host;
+    # Resolve the API again after Docker recreates it with a different IP.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s ipv6=off;
+    resolver_timeout 5s;
+    set $react_api_upstream "${REACT_API_UPSTREAM}";
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
+    proxy_http_version 1.1;
+    proxy_ssl_server_name on;
+    proxy_connect_timeout 5s;
+
+    # API and SignalR keep the original path/query, including negotiation and WS.
+    location ~ ^/(api|hubs)(/|$) {
+        proxy_pass $react_api_upstream$request_uri;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
         proxy_read_timeout 120s;
         proxy_buffering off;
+    }
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
     }
     location = /appsettings.json {
         add_header Cache-Control "no-store";
@@ -30,10 +51,15 @@ server {
     location = /index.html {
         add_header Cache-Control "no-cache";
     }
-    location /assets/ {
+    location ^~ /assets/ {
         try_files $uri =404;
         expires 1y;
         add_header Cache-Control "public, immutable";
+    }
+    # Missing public files must not be returned as HTML by the SPA fallback.
+    location ~* \.(?:css|js|mjs|json|png|jpe?g|gif|webp|avif|ico|svg|woff2?|ttf|map|txt|xml)$ {
+        try_files $uri =404;
+        add_header Cache-Control "no-cache";
     }
     location / {
         try_files $uri $uri/ /index.html;

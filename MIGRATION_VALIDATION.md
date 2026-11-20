@@ -81,7 +81,7 @@ Para manter o isolamento, os testes recusam servidores já abertos nas portas 51
 
 ## Limites e pendências
 
-- O executável Docker não está disponível neste ambiente. Dockerfile, nginx e compose adicional foram preparados, mas a imagem e a execução em container precisam de validação em ambiente com Docker. O workflow `react-validation.yml` inclui o build da imagem em CI; nenhum workflow remoto foi executado nesta sessão.
+- Na validação inicial o Docker não estava disponível. Em 20/11/2026, Docker Desktop passou a estar disponível: build da imagem React e testes HTTP/SignalR no container nginx foram aprovados; detalhes em `REDESIGN_VALIDATION.md`. Nenhum workflow remoto foi executado nesta sessão.
 - Mobile foi validado por emulação Chromium/Pixel 7; não foram utilizados aparelhos físicos, Safari ou Firefox.
 - A importação de vídeo e seus metadados foram exercitados contra o YouTube real. A importação de playlists externas grandes e o shuffle do serviço remoto não foram exercitados; os modos e payloads do frontend são testados e a implementação de backend permanece a original.
 - Os testes não utilizam PostgreSQL: a equivalência de persistência depende do backend preservado. Não foram realizadas migrations, exclusões de dados, alterações de schema ou testes de carga em produção.
@@ -91,4 +91,4 @@ Para manter o isolamento, os testes recusam servidores já abertos nas portas 51
 
 ## Estado de entrega
 
-Frontend React implementado separadamente; Blazor preservado permanentemente e executável. A validação local cobre os cenários acima. Não tratar essa evidência como aprovação de deploy ou como validação dos itens explicitamente pendentes. A seleção de produção continua apontando para o Blazor.
+Frontend React implementado separadamente; Blazor preservado permanentemente e executável. A validação local cobre os cenários acima. Em 20/11/2026, mediante solicitação de troca em produção, o Compose principal passou a selecionar React no serviço `client`; `docker-compose.blazor.yml` oferece rollback. Não houve deploy remoto: a configuração precisa chegar ao servidor pelo pipeline da `main` ou pelos comandos de `MIGRATION_ROLLBACK.md`. A validação local não comprova os itens explicitamente pendentes.

@@ -1,24 +1,40 @@
-import type { RoomSession, SessionState } from '../features/room/RoomSession';
-export function VideoControls({ session, state }: { session: RoomSession; state: SessionState }) {
-  return <div className="legacy-controls"><div className="controls-pill shadow-lg d-flex align-items-center px-4 py-2">
-    <div className="d-flex align-items-center gap-3 me-4">
-      <button className="btn-icon-secondary" onClick={() => { void session.previous().catch(session.error); }} title="Anterior"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.54-.313 1.232.066 1.232.696v7.384c0 .63-.692 1.01-1.232.697L5 8.753V12a.5.5 0 0 1-1 0V4z" /></svg></button>
-      <div className="play-button-wrapper"><button className={`btn-play-pause ${state.isPlaying ? 'pause-glow' : 'play-glow'}`} onClick={state.isPlaying ? session.pause : session.play} title={state.isPlaying ? 'Pausar' : 'Reproduzir'} disabled={!state.playerReady}>
-        <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" style={state.isPlaying ? undefined : { marginLeft: 3 }}><path d={state.isPlaying
-          ? 'M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z'
-          : 'm11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z'} /></svg>
-      </button></div>
-      <button className="btn-icon-secondary" onClick={() => { void session.next().catch(session.error); }} title="Próximo"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.693 3.3 4 3.678 4 4.308v7.384c0 .63.692 1.01 1.233.697L11.5 8.753V12a.5.5 0 0 0 1 0V4z" /></svg></button>
-    </div><div className="v-divider" /><div className="d-flex align-items-center gap-3 ms-4">
-      <button className="btn-icon-secondary p-0" onClick={session.toggleMute} title={state.muted ? 'Ativar som do vídeo' : 'Silenciar vídeo'}><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-        {state.muted || state.volume === 0 ? <path d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06zm7.137 2.096a.5.5 0 0 1 0 .708L12.207 8l1.647 1.646a.5.5 0 0 1-.708.708L11.5 8.707l-1.646 1.647a.5.5 0 0 1-.708-.708L10.793 8 9.146 6.354a.5.5 0 1 1 .708-.708L11.5 7.293l1.646-1.647a.5.5 0 0 1 .708 0z" /> : <>
-          <path d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z" />
-          <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.706.706z" />
-          <path d="M8.707 11.182A4.486 4.486 0 0 0 10.025 8a4.486 4.486 0 0 0-1.318-3.182l-.707.707A3.489 3.489 0 0 1 9.025 8a3.489 3.489 0 0 1-1.025 2.475l.707.707zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06z" /></>}
-      </svg></button>
-      <div className="volume-slider-container"><div className="volume-track"><div className="volume-fill" style={{ width: `${state.volume}%` }} /></div>
-        <input type="range" min="0" max="100" value={state.volume} onChange={event => session.setVolume(Number(event.target.value))} className="volume-input" aria-label="Volume" /></div>
-      <span className="volume-label">{state.volume}%</span>
+import { useEffect, useState, type CSSProperties } from 'react';
+import type { RoomSession } from '../features/room/RoomSession';
+import { Icon } from './Icon';
+
+export function formatPlaybackTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const value = Math.floor(seconds); const hours = Math.floor(value / 3600);
+  return `${hours ? hours + ':' : ''}${hours ? String(Math.floor(value / 60) % 60).padStart(2, '0') : Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
+}
+interface Props {
+  session: RoomSession; isPlaying: boolean; ready: boolean; volume: number; muted: boolean;
+  cinema: boolean; onCinema: () => void; fullscreen: boolean; onFullscreen: () => void;
+}
+export function VideoControls({ session, isPlaying, ready, volume, muted, cinema, onCinema, fullscreen, onFullscreen }: Props) {
+  const [clock, setClock] = useState({ time: 0, duration: 0 });
+  const [scrub, setScrub] = useState<number | null>(null);
+  useEffect(() => {
+    const tick = () => { const value = session.playback(); setClock(previous => previous.time === value.time && previous.duration === value.duration ? previous : value); };
+    tick(); const timer = setInterval(tick, 500);
+    return () => clearInterval(timer);
+  }, [session]);
+  const current = scrub ?? clock.time;
+  const seek = () => {
+    if (scrub === null) return;
+    void session.seekTo(scrub).catch(session.error); setScrub(null);
+  };
+  return <div className="player-controls" aria-label="Controles de reprodução">
+    <div className="playback-track"><input type="range" min={0} max={clock.duration || 1} step="0.1" value={Math.min(current, clock.duration || 1)} aria-label="Posição do vídeo" aria-valuetext={`${formatPlaybackTime(current)} de ${clock.duration ? formatPlaybackTime(clock.duration) : 'duração indisponível'}`} disabled={!ready || !clock.duration}
+      onChange={event => setScrub(Number(event.target.value))} onPointerUp={seek} onKeyUp={seek} onBlur={seek}
+      style={{ '--range-progress': `${clock.duration ? current / clock.duration * 100 : 0}%` } as CSSProperties} /></div>
+    <div className="player-controls-row"><div className="transport-controls">
+      <button className="icon-button" onClick={() => { void session.previous().catch(session.error); }} title="Anterior" aria-label="Anterior"><Icon name="previous" /></button>
+      <button className="play-button" onClick={isPlaying ? session.pause : session.play} title={isPlaying ? 'Pausar' : 'Reproduzir'} aria-label={isPlaying ? 'Pausar' : 'Reproduzir'} disabled={!ready}><Icon name={isPlaying ? 'pause' : 'play'} /></button>
+      <button className="icon-button" onClick={() => { void session.next().catch(session.error); }} title="Próximo" aria-label="Próximo"><Icon name="next" /></button>
+    </div><div className="volume-controls"><button className="icon-button" onClick={session.toggleMute} title={muted ? 'Ativar som do vídeo' : 'Silenciar vídeo'} aria-label={muted ? 'Ativar som do vídeo' : 'Silenciar vídeo'}><Icon name={muted || !volume ? 'muted' : 'volume'} /></button><input type="range" min="0" max="100" value={volume} onChange={event => session.setVolume(Number(event.target.value))} aria-label="Volume" style={{ '--range-progress': `${volume}%` } as CSSProperties} /><span className="sr-only">{volume}%</span></div>
+    <span className="playback-time"><span>{formatPlaybackTime(current)}</span><span className="time-separator">/</span><span>{clock.duration ? formatPlaybackTime(clock.duration) : '—:—'}</span></span>
+    <div className="view-controls"><button className={`icon-button ${cinema ? 'is-active' : ''}`} title={cinema ? 'Sair do modo cinema' : 'Modo cinema'} aria-label={cinema ? 'Sair do modo cinema' : 'Modo cinema'} aria-pressed={cinema} onClick={onCinema}><Icon name="cinema" /></button><button className="icon-button" title={fullscreen ? 'Sair da tela cheia' : 'Tela cheia'} aria-label={fullscreen ? 'Sair da tela cheia' : 'Tela cheia'} onClick={onFullscreen}><Icon name={fullscreen ? 'collapse' : 'expand'} /></button></div>
     </div>
-  </div></div>;
+  </div>;
 }

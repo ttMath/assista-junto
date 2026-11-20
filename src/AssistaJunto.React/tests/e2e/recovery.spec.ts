@@ -11,10 +11,12 @@ test('reconnect restores group membership, playback, chat and presence without d
     const socketCount = sockets.length; sockets.at(-1)!.close({ code: 1012, reason: 'Reconnect test' });
     await expect.poll(() => sockets.length).toBeGreaterThan(socketCount);
     await expect(page.getByText('Reconectando com a sala...', { exact: true })).toHaveCount(0);
+    await friend.getByRole('tab', { name: 'Chat', exact: true }).click();
+    await page.getByRole('tab', { name: 'Chat', exact: true }).click();
     await friend.getByPlaceholder('Digite uma mensagem...').fill('Depois da reconexão'); await friend.getByPlaceholder('Digite uma mensagem...').press('Enter');
     await expect(page.getByText('Depois da reconexão', { exact: true })).toHaveCount(1);
     await friend.getByTitle('Próximo', { exact: true }).click(); await expect.poll(async () => (await playerState(page))?.video).toBe('aqz-KE-bpKQ');
-    await page.getByRole('tab', { name: /Usuários/ }).click(); await expect(page.getByText('2 online', { exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: 'Pessoas', exact: true }).click(); await expect(page.getByText('2 online', { exact: true })).toBeVisible();
   } finally { await friend.close(); }
 });
 
@@ -25,9 +27,9 @@ test('drag reorder preserves the current item and local controls do not change t
     const data = await page.evaluateHandle(() => new DataTransfer());
     const source = page.getByRole('button', { name: 'Arrastar Vídeo de demonstração para reordenar' });
     await source.dispatchEvent('dragstart', { dataTransfer: data });
-    await page.locator('.playlist-item').nth(2).dispatchEvent('dragover', { dataTransfer: data });
-    await page.locator('.playlist-item').nth(2).dispatchEvent('drop', { dataTransfer: data });
-    await expect(friend.locator('.playlist-item').nth(2)).toContainText('Vídeo de demonstração');
+    await page.locator('.playlist-item[data-index="2"]').dispatchEvent('dragover', { dataTransfer: data });
+    await page.locator('.playlist-item[data-index="2"]').dispatchEvent('drop', { dataTransfer: data });
+    await expect(friend.locator('.queue-current')).toContainText('Vídeo de demonstração');
     await expect.poll(async () => {
       const response = await request.get(`http://127.0.0.1:5199/api/rooms/${room.hash}`);
       return (await response.json()).currentVideoIndex;

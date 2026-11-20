@@ -8,7 +8,14 @@ on:
       - 'src/AssistaJunto.Application/**'
       - 'src/AssistaJunto.Domain/**'
       - 'react-client.Dockerfile'
+      - 'docker-compose.yml'
+      - 'docker-compose.react.yml'
+      - 'docker-compose.blazor.yml'
       - 'docker/react-nginx.conf.template'
+      - 'docker/react-upstream.envsh'
+      - '.dockerignore'
+      - '.gitattributes'
+      - 'tests/docker/**'
       - '.github/workflows/react-validation.yml'
   workflow_dispatch:
 jobs:
@@ -32,4 +39,7 @@ jobs:
         working-directory: src/AssistaJunto.React
       - run: npm run test:e2e
         working-directory: src/AssistaJunto.React
-      - run: docker build -f react-client.Dockerfile .
+      - run: docker build -t assistajunto-react:container-test -f react-client.Dockerfile .
+      - run: node --test tests/docker/react-container.test.mjs
+        env:
+          REACT_TEST_IMAGE: assistajunto-react:container-test

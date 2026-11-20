@@ -4,8 +4,9 @@ import { Api } from '../services/api';
 import { setUsername, useUsername } from '../services/identity';
 import { CreateRoomModal } from '../components/Modals';
 import { Metadata } from '../components/Metadata';
+import { WelcomeArt } from '../components/WelcomeArt';
+import { Icon } from '../components/Icon';
 import type { CreateRoom } from '../types/contracts';
-
 export function Home({ api }: { api: Api }) {
   const username = useUsername(); const navigate = useNavigate();
   const [name, setName] = useState(''); const [nameError, setNameError] = useState('');
@@ -24,25 +25,21 @@ export function Home({ api }: { api: Api }) {
     catch (error) { setShowCreate(false); setError(error instanceof Error ? error.message : 'O servidor rejeitou os dados. Tente outro nome.'); }
     finally { pending.current = false; setBusy(false); }
   };
-  return <div className="legacy-home"><Metadata />{!username ? <div className="bg-hero d-flex align-items-center justify-content-center">
-    <div className="bg-blob blob-1" /><div className="bg-blob blob-2" />
-    <div className="container text-center px-4"><div className="hero-content-box mx-auto" style={{ maxWidth: 800 }}>
-      <h1 className="text-glow fw-black mb-2">Assista Junto</h1><p className="text-white mb-5 h5 fw-light mx-auto mt-3" style={{ maxWidth: 450 }}>Assista vídeos em sincronia perfeita com sua comunidade.</p>
-      <div className="d-flex justify-content-center"><div className="d-flex flex-column align-items-center gap-3" style={{ minWidth: 320 }}>
-        <input className="form-control form-control-lg text-center name-entry-input" placeholder="Digite seu nome..." aria-label="Digite seu nome" maxLength={50} value={name} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); submitName(); } }} />
-        {nameError && <small className="name-validation-message" role="alert">{nameError}</small>}
-        <button className="btn btn-lg btn-primary px-5 fw-bold name-entry-button" onClick={submitName} disabled={!name.trim()}>ENTRAR</button>
-      </div></div>
-    </div><div className="mt-5 credits-wrap"><small className="credits-line">Feito com 💜 por <a href="https://github.com/ttMath" target="_blank" rel="noopener noreferrer">Math</a> &amp; <a href="https://github.com/MWillian" target="_blank" rel="noopener noreferrer">MWillian</a></small>
-      <a className="project-link" href="https://github.com/ttMath/assista-junto" target="_blank" rel="noopener noreferrer" aria-label="Projeto no GitHub"><svg className="github-logo" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.01.08-2.11 0 0 .67-.21 2.2.82a7.64 7.64 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.91.08 2.11.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg></a>
-    </div></div>
-  </div> : <>
-    <section className="lobby-shell d-flex align-items-center"><div className="container py-4 py-lg-5 text-center"><div className="lobby-hero mx-auto" style={{ maxWidth: 620 }}><div className="w-100">
-      <p className="lobby-eyebrow mb-2">ASSISTA JUNTO</p><h1 className="fw-black text-white mb-2">Crie sua sala</h1>
-      <p className="text-muted mb-4">Após escolher seu apelido, você cria uma nova sala e entra direto nela.</p>
-      <button className="btn btn-primary btn-create-room" onClick={() => { setError(''); setShowCreate(true); }}>+ Nova Sala</button>
-    </div></div></div></section>
-    {showCreate && <CreateRoomModal onClose={close} onConfirm={model => { void create(model); }} busy={busy} />}
-    {error && <div className="create-room-toast fixed-bottom p-4 d-flex justify-content-center"><div className="alert alert-danger shadow" role="alert">{error}</div></div>}
-  </>}</div>;
+
+  return <div className="home-page"><Metadata />
+    {!username ? <section className="welcome-layout"><div className="welcome-content">
+      <p className="eyebrow"><span className="eyebrow-line" />SEU CINEMA, EM BOA COMPANHIA</p>
+      <h1>O melhor lugar é<br /><span>assistir junto.</span></h1>
+      <p className="welcome-description">Compartilhe o play, a conversa e aquele momento que merece companhia. Seus vídeos do YouTube, em sincronia com quem você gosta.</p>
+      <form className="name-entry" onSubmit={event => { event.preventDefault(); submitName(); }}>
+        <label className="field-label" htmlFor="welcome-name">Primeiro, como podemos te chamar?</label>
+        <div className="name-entry-row"><span className="name-input-wrap"><Icon name="people" /><input id="welcome-name" className="text-input" placeholder="Digite seu nome..." aria-label="Digite seu nome" maxLength={50} value={name} onChange={event => setName(event.target.value)} /></span><button className="button button--primary" disabled={!name.trim()}>ENTRAR</button></div>
+        {nameError && <p className="form-error" role="alert">{nameError}</p>}<small>Um apelido e você já faz parte da sessão.</small>
+      </form>
+      <div className="welcome-features"><div><Icon name="play" /><span>Play sincronizado</span></div><div><Icon name="chat" /><span>Conversa em tempo real</span></div><div><Icon name="queue" /><span>Fila colaborativa</span></div></div>
+    </div><WelcomeArt /></section> : <section className="lobby-section"><div className="lobby-card"><span className="dialog-symbol"><Icon name="film" /></span><p className="eyebrow">O PRÓXIMO PLAY É SEU</p><h1>Pronto para a sessão,<br /><span>{username}?</span></h1><p>Escolha um nome para sua sala, adicione seus vídeos e convide quem vai assistir com você.</p><button className="button button--primary" onClick={() => { setError(''); setShowCreate(true); }}><Icon name="plus" />Nova Sala</button><span className="lobby-footnote">O cinema é seu. A boa companhia também.</span></div></section>}
+    {username && showCreate && <CreateRoomModal onClose={close} onConfirm={model => { void create(model); }} busy={busy} />}
+    {error && <div className="home-error" role="alert"><Icon name="info" /><span>{error}</span></div>}
+    <footer className="home-footer"><span>Boas histórias merecem companhia.</span><div>Feito com <span className="credit-heart">♥</span> por <a href="https://github.com/ttMath" target="_blank" rel="noopener noreferrer">Math</a> e <a href="https://github.com/MWillian" target="_blank" rel="noopener noreferrer">MWillian</a><span className="footer-separator">·</span><a href="https://github.com/ttMath/assista-junto" target="_blank" rel="noopener noreferrer">Projeto no GitHub</a></div></footer>
+  </div>;
 }

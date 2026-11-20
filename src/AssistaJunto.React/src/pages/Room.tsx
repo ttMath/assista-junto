@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { Api, ApiError } from '../services/api';
 import { getUsername, setUsername, useUsername } from '../services/identity';
 import type { Room as RoomModel, RoomState } from '../types/contracts';
 import { NamePrompt, PasswordModal } from '../components/Modals';
 import { RoomSession } from '../features/room/RoomSession';
-import { YouTubePlayer } from '../features/player/YouTubePlayer';
 import { Metadata } from '../components/Metadata';
-import { VideoControls } from '../components/VideoControls';
-import { Playlist } from '../components/Playlist';
-import { Chat } from '../components/Chat';
-import { Users } from '../components/Users';
+import { VideoSection } from '../components/VideoSection';
+import { RoomSidebar, readRoomTab, rememberRoomTab, type RoomTab } from '../components/RoomSidebar';
+import { RoomSettings } from '../components/RoomSettings';
+import type { PageOutlet } from '../components/RoomChrome';
 import { Toasts } from '../components/Toasts';
-
+import { Icon } from '../components/Icon';
 export function RoomPage({ api }: { api: Api }) {
   const { hash = '' } = useParams();
   return <RoomAccess key={hash} api={api} hash={hash} />;
@@ -56,12 +55,12 @@ function RoomAccess({ api, hash }: { api: Api; hash: string }) {
       else setError(error instanceof Error ? error.message : 'Não foi possível entrar na sala.');
     } finally { joinLock.current = false; setBusy(false); }
   };
-  return <div className="legacy-room"><Metadata room />
+  return <div className="room-access"><Metadata room />
     {!username ? <NamePrompt onConfirm={name => { try { setUsername(name); } catch (error) { setError((error as Error).message); } }} />
       : privateRoom ? <PasswordModal onClose={home} onConfirm={value => { void password(value); }} invalid={invalid} busy={busy} />
       : admitted && room ? <ActiveRoom key={room.hash} api={api} room={room} initial={initial} />
-      : !error ? <div className="d-flex flex-column justify-content-center align-items-center vh-100 bg-black"><div className="spinner-border text-primary mb-3" /><p className="text-muted text-uppercase fw-bold small">Sincronizando com a sala...</p></div> : null}
-    {error && <div className="room-access-error alert alert-danger" role="alert">{error} <button className="btn btn-outline-light btn-sm" onClick={() => window.location.reload()}>Tentar novamente</button></div>}
+      : !error ? <div className="room-loading"><span className="spinner" /><p className="loading-message">Sincronizando com a sala...</p></div> : null}
+    {error && <div className="room-access-error" role="alert">{error} <button className="button button--quiet button--small" onClick={() => window.location.reload()}>Tentar novamente</button></div>}
   </div>;
 }
 function ActiveRoom({ api, room, initial }: { api: Api; room: RoomModel; initial?: RoomState }) {
@@ -73,45 +72,48 @@ function ActiveRoom({ api, room, initial }: { api: Api; room: RoomModel; initial
   }, [api, room, initial]);
   return session ? <RoomView api={api} session={session} /> : null;
 }
-function Player({ session }: { session: RoomSession }) {
-  const host = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const element = document.createElement('div'); element.id = 'yt-player'; host.current?.append(element);
-    const player = new YouTubePlayer(element, { ready: session.ready, state: session.onPlayerState, seek: session.onPlayerSeek, error: session.toast });
-    session.attachPlayer(player);
-    return () => { player.destroy(); element.remove(); };
-  }, [session]);
-  return <div className="player-stage mb-3"><div className="ratio ratio-16x9 rounded-4 overflow-hidden" ref={host} /></div>;
-}
+
 function RoomView({ api, session }: { api: Api; session: RoomSession }) {
   const state = useSyncExternalStore(session.subscribe, session.snapshot);
-  const [tab, setTab] = useState<'chat' | 'users'>('chat');
-  const copy = async () => {
+  const { setRoomChrome } = useOutletContext<PageOutlet>();
+  const [tab, setTab] = useState<RoomTab>(() => readRoomTab(session.room.hash));
+  const [cinema, setCinema] = useState(false);
+  const [settings, setSettings] = useState(false);
+  const [lastRead, setLastRead] = useState(0);
+  const selectTab = useCallback((tab: RoomTab) => { setTab(tab); rememberRoomTab(session.room.hash, tab); }, [session.room.hash]);
+  const toggleCinema = useCallback(() => setCinema(current => !current), []);
+  const openSettings = useCallback(() => setSettings(true), []);
+  const copy = useCallback(async () => {
     try { await navigator.clipboard.writeText(`${location.origin}/sala/${session.room.hash}`); session.toast('URL da sala copiada.'); }
     catch { session.toast('Não foi possível copiar a URL da sala.'); }
-  };
-  return <><Toasts toasts={state.toasts} onDismiss={session.dismissToast} />
-    <section className="room-shell"><div className="container-fluid py-3 py-lg-4">
-      {state.connection !== 'connected' && <div className="alert alert-warning d-flex align-items-center justify-content-between" role="status">
-        <span>{state.connection === 'disconnected' ? 'Conexão com a sala interrompida.' : state.connection === 'reconnecting' ? 'Reconectando com a sala...' : 'Conectando com a sala...'}</span>
-        {state.connection === 'disconnected' && <button className="btn btn-sm btn-outline-dark" onClick={() => window.location.reload()}>Reconectar</button>}
-      </div>}
-      <div className="room-grid"><div className="room-main-column">
-        <div className="room-main-header mb-3"><div><p className="room-overline mb-1">SALA ATIVA</p><h4 className="text-white fw-bold mb-0">{session.room.name}</h4></div>
-          <div className="room-status-pill"><span className="dot" />{state.isPlaying ? 'Ao vivo' : 'Pausado'}</div></div>
-        <Player session={session} /><VideoControls session={session} state={state} />
-      </div><aside className="room-side-column">
-        <Playlist api={api} session={session} state={state} />
-        <div className="side-panel social-panel"><div className="social-tabs mb-3" role="tablist" aria-label="Sala">
-          <button className={`social-tab-btn ${tab === 'chat' ? 'active' : ''}`} role="tab" aria-selected={tab === 'chat'} onClick={() => setTab('chat')}><i className="bi bi-chat-dots-fill me-2" />Chat</button>
-          <button className={`social-tab-btn ${tab === 'users' ? 'active' : ''}`} role="tab" aria-selected={tab === 'users'} onClick={() => setTab('users')}><i className="bi bi-people-fill me-2" />Usuários<span className="tab-counter">{state.users.length}</span></button>
-        </div>{tab === 'chat' ? <><div className="chat-panel"><Chat state={state} session={session} /></div>
-          <div className="room-link-box mt-3" aria-label="Link da sala"><span className="room-link-preview">{location.hostname}/sala/{session.room.hash}</span>
-            <button className="btn copy-room-link-button" onClick={() => { void copy(); }} title="Copiar URL da sala"><i className="bi bi-link-45deg me-2" /><span>Copiar URL</span></button></div>
-        </> : <div className="users-tab-panel"><div className="d-flex justify-content-between align-items-center mb-2"><h5 className="text-white fw-bold mb-0">Pessoas na sala</h5><span className="room-users-count">{state.users.length} online</span></div>
-          <Users users={state.users} owner={session.room.ownerDisplayName} />{!state.users.length && <span className="text-muted small">Nenhum usuário na sala.</span>}
-        </div>}</div>
-      </aside></div>
-    </div></section>
-  </>;
+  }, [session]);
+  useEffect(() => {
+    setRoomChrome({ name: session.room.name, connection: state.connection, cinema, invite: () => { void copy(); }, toggleCinema, settings: openSettings });
+    return () => setRoomChrome(null);
+  }, [setRoomChrome, session.room.name, state.connection, cinema, copy, toggleCinema, openSettings]);
+  useEffect(() => {
+    if (tab === 'chat' && !cinema) setLastRead(state.chatActivity);
+  }, [tab, cinema, state.chatActivity]);
+  useEffect(() => {
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && cinema && !settings && !document.querySelector('[role="dialog"]')) setCinema(false);
+    };
+    window.addEventListener('keydown', escape);
+    return () => window.removeEventListener('keydown', escape);
+  }, [cinema, settings]);
+  const addVideo = useCallback(() => {
+    setCinema(false); selectTab('queue');
+    const focus = () => requestAnimationFrame(() => document.getElementById('youtube-url')?.focus());
+    if (document.fullscreenElement) void document.exitFullscreen().then(focus).catch(session.error); else focus();
+  }, [selectTab, session]);
+  const unread = tab === 'chat' && !cinema ? 0 : Math.max(0, state.chatActivity - lastRead);
+  return <div className={`room-page ${cinema ? 'cinema-mode' : ''}`}>
+    <Toasts toasts={state.toasts} onDismiss={session.dismissToast} />
+    {state.connection !== 'connected' && <div className="connection-banner" role="status"><Icon name="info" /><span>{state.connection === 'disconnected' ? 'Conexão com a sala interrompida.' : state.connection === 'reconnecting' ? 'Reconectando com a sala...' : 'Conectando com a sala...'}</span>{state.connection === 'disconnected' && <button className="button button--quiet button--small" onClick={() => window.location.reload()}>Reconectar</button>}</div>}
+    <div className="room-layout">
+      <VideoSection session={session} current={state.playlist[state.currentVideoIndex]} isPlaying={state.isPlaying} connection={state.connection} ready={state.playerReady} volume={state.volume} muted={state.muted} cinema={cinema} onCinema={toggleCinema} onAddVideo={addVideo} />
+      <RoomSidebar api={api} session={session} state={state} tab={tab} onTab={selectTab} unread={unread} cinema={cinema} />
+    </div>
+    {settings && <RoomSettings session={session} state={state} onClose={() => setSettings(false)} />}
+  </div>;
 }

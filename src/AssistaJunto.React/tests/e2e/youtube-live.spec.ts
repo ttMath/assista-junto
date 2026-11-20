@@ -11,7 +11,7 @@ test('real YouTube IFrame API loads and plays using the native video control', a
   await expect(page.getByText('Erro no player YouTube', { exact: false })).toHaveCount(0);
   // An unmuted initial play can require activation inside the cross-origin iframe.
   await page.frameLocator('iframe#yt-player').getByRole('button', { name: 'Play video', exact: true }).click();
-  await expect(page.locator('.room-status-pill')).toHaveText('Ao vivo', { timeout: 20_000 });
+  await expect(page.locator('.queue-current-label')).toContainText('REPRODUZINDO AGORA', { timeout: 20_000 });
 });
 
 test('two real YouTube players play and pause together through SignalR', async ({ page, request, browser }, info) => {
@@ -32,7 +32,7 @@ test('two real YouTube players play and pause together through SignalR', async (
     expect(Math.abs(await currentTime(page) - await currentTime(friend))).toBeLessThan(3);
     await page.getByTitle('Pausar', { exact: true }).click();
     await expect.poll(() => friend.frameLocator('iframe#yt-player').locator('video').evaluate(video => (video as HTMLVideoElement).paused)).toBe(true);
-    await expect(friend.locator('.room-status-pill')).toHaveText('Pausado');
+    await expect(friend.locator('.queue-current-label')).toContainText('SELECIONADO AGORA');
   } finally { await friend.close(); }
 });
 

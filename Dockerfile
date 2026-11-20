@@ -15,6 +15,7 @@ RUN dotnet publish src/AssistaJunto.API/AssistaJunto.API.csproj -c Release -o /a
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
+ENV ASPNETCORE_HTTP_PORTS=5000
 COPY --from=build /app/publish .
 EXPOSE 5000
 ENTRYPOINT ["dotnet", "AssistaJunto.API.dll"]

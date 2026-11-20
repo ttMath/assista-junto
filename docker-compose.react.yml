@@ -1,4 +1,5 @@
-# Additive: original client remains Blazor, including in production.
+# Preview React independente; o servico client do compose principal ja publica React.
+# Esta instancia usa apenas a porta local, sem duplicar as rotas de producao no Traefik.
 # docker compose -f docker-compose.yml -f docker-compose.react.yml --profile react ...
 services:
   react-client:

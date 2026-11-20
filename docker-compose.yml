@@ -79,20 +79,22 @@ services:
       - traefik.http.services.api.loadbalancer.server.port=5000
 
   # ----------------------------------------------------------------------
-  # Client (Front-end Blazor WASM) -- www.assistajunto.com.br
+  # Client (Front-end React) -- www.assistajunto.com.br
   # ----------------------------------------------------------------------
   client:
     build:
       context: .
-      dockerfile: client.Dockerfile
+      dockerfile: react-client.Dockerfile
     restart: unless-stopped
-    env_file: .env
+    environment:
+      REACT_API_UPSTREAM: ${REACT_API_UPSTREAM:-http://api:5000}
     depends_on:
       - api
     networks:
       - proxy
     labels:
       - traefik.enable=true
+      - traefik.docker.network=proxy
       - traefik.http.routers.client.rule=Host(`www.assistajunto.com.br`)
       - traefik.http.routers.client.entrypoints=websecure
       - traefik.http.routers.client.tls.certresolver=letsencrypt

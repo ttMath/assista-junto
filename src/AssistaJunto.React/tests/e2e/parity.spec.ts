@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { identify, installPlayer, openRoom, playerState, seed } from './helpers';
-import { compareVisual } from './visual';
+import { openRoom, playerState, seed } from './helpers';
 
-test('Blazor and React exchange chat and playback on the unchanged hub', async ({ page, browser, request }) => {
+test('Blazor and redesigned React exchange chat and playback on the unchanged hub', async ({ page, browser, request }) => {
   const room = await seed(request); const blazor = await browser.newPage();
   try {
     await openRoom(page, room.hash, room.ownerDisplayName);
     await openRoom(blazor, room.hash, `Blazor ${Date.now()}`, 'http://127.0.0.1:5199');
+    await page.getByRole('tab', { name: 'Chat', exact: true }).click();
     await blazor.getByPlaceholder('Digite uma mensagem...').fill('Mensagem do Blazor');
     await blazor.getByPlaceholder('Digite uma mensagem...').press('Enter'); await expect(page.getByText('Mensagem do Blazor', { exact: true })).toBeVisible();
     await page.getByLabel('Mensagem', { exact: true }).fill('Mensagem do React'); await page.getByLabel('Mensagem', { exact: true }).press('Enter');
@@ -16,51 +16,52 @@ test('Blazor and React exchange chat and playback on the unchanged hub', async (
     await expect.poll(async () => (await playerState(page))?.playing).toBe(true);
     await page.getByTitle('Próximo', { exact: true }).click();
     await expect.poll(async () => (await playerState(blazor))?.video).toBe('aqz-KE-bpKQ');
-    await blazor.getByTitle('Limpar playlist').click(); await expect(page.getByText('Playlist (0 vídeos)', { exact: true })).toBeVisible();
+    await blazor.getByTitle('Limpar playlist').click(); await page.getByRole('tab', { name: 'Fila', exact: true }).click();
+    await expect(page.getByLabel('Playlist (0 vídeos)', { exact: true })).toBeVisible();
   } finally { await blazor.close(); }
 });
 
-test('home matches the original colors, geometry and responsive layout', async ({ page, browser }, info) => {
-  const blazor = await browser.newPage({ viewport: page.viewportSize()! });
-  try {
-    await page.goto('/'); await blazor.goto('http://127.0.0.1:5199');
-    await expect(blazor.getByPlaceholder('Digite seu nome...')).toBeVisible(); await expect(page.getByPlaceholder('Digite seu nome...')).toBeVisible();
-    for (const selector of ['.top-bar', '.hero-content-box', '.name-entry-input', '.name-entry-button', '.text-glow']) {
-      const metrics = async (target: typeof page) => target.locator(selector).evaluate(element => {
-        const box = element.getBoundingClientRect(); const style = getComputedStyle(element);
-        return { width: box.width, height: box.height, x: box.x, y: box.y, color: style.color, fontSize: style.fontSize, background: style.backgroundImage };
-      });
-      const original = await metrics(blazor); const migrated = await metrics(page);
-      expect(migrated.color, selector).toBe(original.color); expect(migrated.fontSize, selector).toBe(original.fontSize); expect(migrated.background, selector).toBe(original.background);
-      for (const dimension of ['width', 'height', 'x', 'y'] as const) expect(Math.abs(migrated[dimension] - original[dimension]), `${selector} ${dimension}`).toBeLessThanOrEqual(2);
-    }
-    await compareVisual(blazor, page, 'home', info);
-  } finally { await blazor.close(); }
+test('cinematic Home is usable without horizontal overflow', async ({ page }, info) => {
+  await page.goto('/'); await expect(page.getByPlaceholder('Digite seu nome...')).toBeVisible();
+  expect(await page.locator('.welcome-description').evaluate(el => getComputedStyle(el).fontFamily)).toContain('Segoe UI');
+  for (const width of [320, 375, 390, 430, 768, 1024, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    const input = await page.getByPlaceholder('Digite seu nome...').boundingBox();
+    expect(input!.width).toBeGreaterThan(150);
+    await expect(page.getByRole('button', { name: 'ENTRAR', exact: true })).toBeDisabled();
+  }
+  await page.setViewportSize({ width: info.project.name === 'mobile' ? 390 : 1440, height: 900 });
+  await page.screenshot({ path: info.outputPath('cinematic-home.png'), fullPage: true, animations: 'disabled', scale: 'css' });
 });
 
-test('room geometry and colors follow the original without horizontal overflow', async ({ page, browser, request }, info) => {
-  const room = await seed(request, `Visual ${Date.now()}`); const blazor = await browser.newPage({ viewport: page.viewportSize()! });
-  try {
-    await identify(page, room.ownerDisplayName); await identify(blazor, room.ownerDisplayName);
-    await installPlayer(page); await installPlayer(blazor);
-    await page.goto(`/sala/${room.hash}`); await blazor.goto(`http://127.0.0.1:5199/sala/${room.hash}`);
-    await expect(page.getByText('SALA ATIVA', { exact: true })).toBeVisible(); await expect(blazor.getByText('SALA ATIVA', { exact: true })).toBeVisible();
-    // Ignore the transient join toast; compare component layout directly.
-    for (const selector of ['.room-grid', '.player-stage', '.controls-pill', '.add-video-panel', '.playlist-panel', '.social-tabs', '.chat-wrapper']) {
-      const metrics = async (target: typeof page) => target.locator(selector).evaluate(element => {
-        const box = element.getBoundingClientRect(); const style = getComputedStyle(element);
-        return { width: box.width, height: box.height, x: box.x, y: box.y, color: style.color, background: style.backgroundColor };
-      });
-      const original = await metrics(blazor); const migrated = await metrics(page);
-      expect(migrated.color, selector).toBe(original.color); expect(migrated.background, selector).toBe(original.background);
-      expect(Math.abs(migrated.width - original.width), `${selector} width`).toBeLessThanOrEqual(2);
-      expect(Math.abs(migrated.height - original.height), `${selector} height`).toBeLessThanOrEqual(2);
-      expect(Math.abs(migrated.x - original.x), `${selector} x`).toBeLessThanOrEqual(2);
-      expect(Math.abs(migrated.y - original.y), `${selector} y`).toBeLessThanOrEqual(2);
-    }
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
-    const originalOverflow = await blazor.evaluate(() => document.documentElement.scrollWidth - innerWidth);
-    expect(overflow).toBeLessThanOrEqual(Math.max(2, originalOverflow));
-    await compareVisual(blazor, page, 'room', info);
-  } finally { await blazor.close(); }
+test('room responds at all target widths without remounting player or connection', async ({ page, request }, info) => {
+  const room = await seed(request); await openRoom(page, room.hash, room.ownerDisplayName);
+  await expect.poll(async () => (await playerState(page))?.video).toBe('M7lc1UVf-VE');
+  const initialPlayers = await page.evaluate(() => (window as Window & { __players?: unknown[] }).__players?.length);
+  let connections = 0; page.on('websocket', () => connections++);
+  for (const width of [320, 375, 390, 430, 768, 1024, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+    const video = await page.locator('.video-stage').boundingBox(); const side = await page.locator('.room-sidebar').boundingBox();
+    expect(Math.abs(video!.width / video!.height - 16 / 9)).toBeLessThan(.02);
+    if (width > 1024) {
+      expect(video!.width / (video!.width + side!.width)).toBeGreaterThanOrEqual(.69);
+      expect(side!.x).toBeGreaterThan(video!.x + video!.width);
+    } else expect(side!.y).toBeGreaterThan(video!.y + video!.height);
+    expect(await page.evaluate(() => (window as Window & { __players?: unknown[] }).__players?.length)).toBe(initialPlayers);
+    expect((await playerState(page))?.video).toBe('M7lc1UVf-VE');
+  }
+  expect(connections).toBe(0);
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  expect(await page.evaluate(() => (window as Window & { __players?: unknown[] }).__players?.length)).toBe(initialPlayers);
+  expect((await playerState(page))?.video).toBe('M7lc1UVf-VE');
+  expect(connections).toBe(0);
+  await page.setViewportSize({ width: info.project.name === 'mobile' ? 390 : 1440, height: 900 });
+  await page.screenshot({ path: info.outputPath('cinematic-room-queue.png'), fullPage: true, animations: 'disabled', scale: 'css' });
+  await page.getByRole('tab', { name: 'Chat', exact: true }).click();
+  await page.screenshot({ path: info.outputPath('cinematic-room-chat.png'), fullPage: true, animations: 'disabled', scale: 'css' });
+  await page.getByRole('tab', { name: 'Pessoas', exact: true }).click();
+  await page.screenshot({ path: info.outputPath('cinematic-room-people.png'), fullPage: true, animations: 'disabled', scale: 'css' });
 });

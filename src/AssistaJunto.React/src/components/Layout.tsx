@@ -1,44 +1,56 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { logout, setUsername, useUsername } from '../services/identity';
 import { Avatar } from './Users';
 import { Modal } from './Modals';
+import { BrandMark, Icon } from './Icon';
+import { ConnectionStatus } from './ConnectionStatus';
+import type { RoomChrome } from './RoomChrome';
 
 export function Layout() {
   const username = useUsername(); const location = useLocation();
+  const [roomChrome, setRoomChrome] = useState<RoomChrome | null>(null);
+  const outlet = useMemo(() => ({ setRoomChrome }), []);
   const [editing, setEditing] = useState(false); const [name, setName] = useState(''); const [error, setError] = useState('');
   const [leaving, setLeaving] = useState(false);
   const save = () => {
     if (!name.trim()) return;
     try { setUsername(name); setEditing(false); setError(''); } catch (error) { setError((error as Error).message); }
   };
-  return <div className="legacy-layout"><div className="page">
-    <header className="top-bar d-flex align-items-center justify-content-between px-3 px-md-4 py-2 text-white">
-      <div className="d-flex align-items-center gap-3"><button className="text-decoration-none text-white fw-bold fs-5 fs-md-4 home-btn" onClick={() => {
+  const signOut = () => { logout(); window.location.assign('/'); };
+  return <div className={`app-shell ${roomChrome?.cinema ? 'app-shell--cinema' : ''}`}>
+    <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
+    <header className="app-header">
+      <button className="brand" aria-label="Assista Junto — início" onClick={() => {
         if (location.pathname.toLowerCase().startsWith('/sala/')) setLeaving(true); else window.location.assign('/');
-      }}>🎬 Assista Junto</button></div>
-      <div className="d-flex align-items-center gap-3">{username && <>
-        {editing ? <div className="d-flex align-items-center gap-2">
-          <input className="form-control form-control-sm edit-name-input" aria-label="Editar nome" maxLength={50} value={name} onChange={event => setName(event.target.value)} onKeyDown={event => {
-            if (event.key === 'Enter') save(); else if (event.key === 'Escape') { setEditing(false); setError(''); }
-          }} />
-          <button className="btn btn-sm btn-success px-2 py-0" title="Salvar" onClick={save} disabled={!name.trim()}>✓</button>
-          <button className="btn btn-sm btn-outline-secondary px-2 py-0" title="Cancelar" onClick={() => { setEditing(false); setError(''); }}>✕</button>
-        </div> : <button className="btn btn-sm user-name-btn d-flex align-items-center gap-2" title="Clique para alterar o nome" onClick={() => { setName(username); setError(''); setEditing(true); }}>
-          <Avatar name={username} size={26} /><span className="fw-semibold">{username}</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-        </button>}
-        <button className="btn btn-outline-light btn-sm btn-logout" onClick={() => { logout(); window.location.assign('/'); }}>Sair</button>
-      </>}</div>
+      }}><BrandMark /><span>Assista<span className="brand-accent">Junto</span></span></button>
+      {roomChrome && <div className="header-room"><ConnectionStatus status={roomChrome.connection} /><span className="header-room-separator" /><span className="header-room-name" title={roomChrome.name}>{roomChrome.name}</span></div>}
+      <div className="header-actions">
+        {roomChrome && <>
+          <button className="button button--quiet invite-button" title="Copiar URL da sala" onClick={roomChrome.invite}><Icon name="link" /><span>Convidar</span></button>
+          <button className="button button--primary header-cinema" aria-pressed={roomChrome.cinema} onClick={roomChrome.toggleCinema}><Icon name="cinema" /><span>{roomChrome.cinema ? 'Sair do cinema' : 'Modo cinema'}</span></button>
+          <button className="icon-button" title="Configurações da sessão" aria-label="Configurações da sessão" onClick={roomChrome.settings}><Icon name="settings" /></button>
+        </>}
+        {username && <button className="profile-button" title="Clique para alterar o nome" onClick={() => { setName(username); setError(''); setEditing(true); }}><Avatar name={username} size={34} /><span className="profile-name">{username}</span><Icon name="edit" /></button>}
+        {!roomChrome && !username && <span className="header-caption">Boas histórias são melhores juntos.</span>}
+      </div>
     </header>
-    {error && <div className="name-edit-alert" role="alert">{error}</div>}
-    {leaving && <Modal title="Sair da sala" scope="leave" onClose={() => setLeaving(false)}>
-      <div className="modal-content leave-room-modal p-2 rounded-4 shadow-lg"><div className="modal-header border-0 pb-0">
-        <h4 className="modal-title fw-bold text-white">Sair da sala</h4><button className="btn-close btn-close-white" aria-label="Fechar" onClick={() => setLeaving(false)} />
-      </div><div className="modal-body p-4"><p className="text-white mb-0">Deseja sair da sala atual e voltar para a tela inicial?</p></div>
-        <div className="modal-footer border-0 pt-0 gap-3"><button className="btn text-white fw-bold text-decoration-none" onClick={() => { setLeaving(false); window.location.assign('/'); }}>Sim</button>
-          <button className="btn btn-primary px-4 fw-bold shadow-sm col" onClick={() => setLeaving(false)}>Não</button></div></div>
+    {editing && <Modal title="Seu perfil" onClose={() => setEditing(false)}>
+      <form className="dialog-card" onSubmit={event => { event.preventDefault(); save(); }}>
+        <div className="dialog-heading"><div className="dialog-symbol"><Icon name="people" /></div><button type="button" className="icon-button" aria-label="Fechar" onClick={() => setEditing(false)}><Icon name="close" /></button></div>
+        <p className="eyebrow">SEU LUGAR NA SESSÃO</p><h2>Como vamos te chamar?</h2><p className="dialog-description">Seu apelido identifica você nas salas e no chat.</p>
+        <label className="field-label" htmlFor="edit-name">Seu nome</label><input id="edit-name" className="text-input" aria-label="Editar nome" maxLength={50} value={name} onChange={event => setName(event.target.value)} />
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <div className="dialog-actions"><button type="button" className="button button--quiet" onClick={() => setEditing(false)}>Cancelar</button><button className="button button--primary" disabled={!name.trim()}>Salvar nome</button></div>
+        <button type="button" className="button button--danger profile-logout" onClick={signOut}><Icon name="logout" />Sair</button>
+      </form>
     </Modal>}
-    <main className="content-area"><Outlet /></main>
-  </div></div>;
+    {leaving && <Modal title="Sair da sala" onClose={() => setLeaving(false)}>
+      <div className="dialog-card"><div className="dialog-heading"><div className="dialog-symbol"><Icon name="logout" /></div><button className="icon-button" aria-label="Fechar" onClick={() => setLeaving(false)}><Icon name="close" /></button></div>
+        <h2>Sair da sala</h2><p className="dialog-description">Deseja sair da sala atual e voltar para a tela inicial?</p>
+        <div className="dialog-actions"><button className="button button--quiet" onClick={() => { setLeaving(false); window.location.assign('/'); }}>Sim</button><button className="button button--primary" onClick={() => setLeaving(false)}>Não</button></div>
+      </div>
+    </Modal>}
+    <main id="main-content" className="app-content"><Outlet context={outlet} /></main>
+  </div>;
 }

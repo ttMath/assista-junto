@@ -118,6 +118,14 @@ dotnet publish src/AssistaJunto.Client -c Release -o artifacts/blazor
 npm --prefix src/AssistaJunto.React run build
 ```
 
+## Interface React — Cinematográfico Premium
+
+O React utiliza o protótipo responsivo como referência visual: player dominante, painel Fila → Chat → Pessoas e Fila como aba inicial. No mobile, o painel fica abaixo do vídeo. A troca de abas, o modo cinema e o redimensionamento preservam o player e a conexão da sala. A preferência de aba é lembrada por sala durante a sessão do navegador.
+
+Home, criação/acesso à sala, perfil, configurações e mensagens utilizam os mesmos tokens SCSS. A fila mantém os três modos de adição, shuffle, limpeza, drag and drop e botões de reordenação por teclado/toque. O chat preserva rascunhos e a posição de leitura, com contador de mensagens reais não lidas. Os contratos da API e o frontend Blazor permanecem preservados.
+
+Auditoria, arquivos e evidências: [REDESIGN_VALIDATION.md](REDESIGN_VALIDATION.md). O relatório de migração anterior documenta o estado inicial; a igualdade visual com o Blazor foi substituída pelos critérios do redesign.
+
 ## Testes de navegador sem banco de dados
 
 Antes de executar, encerre o Vite de desenvolvimento com `Ctrl+C` e deixe as portas 5173 e 5199 livres. A suíte inicia seus próprios servidores e recusa reutilizar servidores existentes, para garantir que os testes não utilizem sua API real.
@@ -133,7 +141,25 @@ Os três testes externos de reprodução/sincronização/importação YouTube s�
 
 ## Docker e escolha de frontend
 
-O `docker-compose.yml` original continua utilizando o Blazor no serviço `client`. O React tem Dockerfile e compose adicionais, com porta própria e ativação explícita:
+O `docker-compose.yml` publica **React** no serviço `client`, usando `react-client.Dockerfile`. O Traefik mantém `https://www.assistajunto.com.br`, o certificado e o redirecionamento de `assistajunto.com.br` para `www`. A API mantém seu domínio e o React encaminha `/api` e `/hubs` pelo nginx à mesma API interna.
+
+Para aplicar somente a troca do frontend em uma stack já existente, execute no servidor com os arquivos atualizados:
+
+```sh
+docker compose -f docker-compose.yml build client
+docker compose -f docker-compose.yml up -d --no-deps client
+```
+
+O pipeline de deploy da branch `main` também utiliza esse Compose. O Blazor permanece integralmente em `src/AssistaJunto.Client`, com seu Dockerfile e um override para retorno ao mesmo domínio:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.blazor.yml build client
+docker compose -f docker-compose.yml -f docker-compose.blazor.yml up -d --no-deps client
+```
+
+O override de rollback não deve ser incluído quando o frontend desejado for React. Para retornar ao React, execute os dois comandos do Compose principal acima.
+
+O arquivo `docker-compose.react.yml` continua oferecendo um **preview adicional local** do React, independente do serviço de produção:
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.react.yml --profile react build react-client
@@ -141,8 +167,21 @@ docker compose -f docker-compose.yml -f docker-compose.react.yml --profile react
 docker compose -f docker-compose.yml -f docker-compose.react.yml --profile react up -d --no-deps react-client
 ```
 
-Acesso React: http://127.0.0.1:3001. Configure `REACT_CLIENT_PORT` e `REACT_API_UPSTREAM` no `.env` se necessário. O nginx encaminha HTTP e WebSocket à mesma API e oferece fallback SPA. O serviço opcional não altera domínios Traefik nem faz a troca automática em produção.
+Acesso ao preview: http://127.0.0.1:3001. `REACT_CLIENT_PORT` configura somente essa porta local; `REACT_API_UPSTREAM` configura o proxy de API tanto na produção quanto no preview (padrão `http://api:5000`). O `traefik.enable=false` desse serviço adicional evita duplicar as rotas do serviço `client`, que já publica o React.
 
 Documentação: [inventário](MIGRATION_INVENTORY.md), [arquitetura](MIGRATION_ARCHITECTURE.md), [validação e pendências](MIGRATION_VALIDATION.md), [seleção e rollback](MIGRATION_ROLLBACK.md).
+
+### Verificar o container React
+
+O runtime contém apenas nginx e os arquivos publicados; Node, TypeScript e Sass são usados somente no estágio de build. O container fornece `/healthz` e um healthcheck Docker. O deploy do pipeline aguarda a saúde do serviço.
+
+`REACT_API_UPSTREAM` deve ser uma origem HTTP(S), por exemplo `http://api:5000`, sem `/api`, `/hubs`, credenciais ou query. Uma barra final é normalizada automaticamente. O proxy preserva caminho e query, suporta WebSocket e atualiza a resolução DNS quando o container da API muda de IP. A saúde do frontend verifica o nginx; ela não indica disponibilidade da API.
+
+```sh
+docker build -t assistajunto-react:docker-review -f react-client.Dockerfile .
+node --test tests/docker/react-container.test.mjs
+```
+
+Os testes requerem Node 26 e Docker. Criam e removem uma rede e containers exclusivos, incluindo uma API de teste mínima, sem usar o `.env`, PostgreSQL ou a API da aplicação. Verificam inicialização sem API, saúde, proxy, headers HTTPS, upgrade WebSocket, rotas SPA, arquivos ausentes, gzip/cache e recuperação após troca de IP da API. O mesmo teste roda nos workflows de CI.
 
 ---

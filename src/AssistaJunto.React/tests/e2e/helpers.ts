@@ -18,6 +18,7 @@ export async function installPlayer(page: Page) {
       stopVideo() { this.playing = false; this.video = null; }
       seekTo(time) { this.position = time; }
       getCurrentTime() { return this.position; }
+      getDuration() { return this.video ? 360 : 0; }
       setVolume(volume) { this.volume = volume; }
       mute() { this.muted = true; } unMute() { this.muted = false; }
       destroy() { this.destroyed = true; }

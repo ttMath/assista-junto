@@ -11,6 +11,11 @@
 **/dist
 **/playwright-report
 **/test-results
+**/TestResults
+**/coverage
+artifacts/
+**/appsettings.Development.json
+**/appsettings.*.local.json
 
 # Git
 **/.git
@@ -19,4 +24,5 @@
 
 # Visual Studio
 **/.vs
+**/.vscode
 **/*.user

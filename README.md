@@ -139,6 +139,20 @@ Playwright inicia um host .NET exclusivamente em memória na porta 5199, publica
 
 Os três testes externos de reprodução/sincronização/importação YouTube são opcionais: no PowerShell, defina `$env:RUN_YOUTUBE_LIVE = '1'` para incluí-los em desktop. O comportamento de autoplay continua sujeito às políticas do navegador.
 
+## Validação .NET da API
+
+O workflow `.NET API validation` (`.github/workflows/dotnet-validation.yml`) executa restore e build Release da API e de seus projetos de backend, seguido de `dotnet test` do projeto `tests/AssistaJunto.Tests`. Ele é chamado pelo pipeline em pull requests e pushes na `main`, e também pode ser iniciado manualmente pelo GitHub Actions. Uma falha nessa validação impede o job de deploy.
+
+```sh
+dotnet restore src/AssistaJunto.API/AssistaJunto.API.csproj
+dotnet build src/AssistaJunto.API/AssistaJunto.API.csproj -c Release --no-restore
+dotnet test tests/AssistaJunto.Tests/AssistaJunto.Tests.csproj -c Release --logger trx --results-directory artifacts/dotnet-tests
+```
+
+Os testes são C#/.NET 10 com xUnit. Cobrem regras de salas e reprodução, criação/entrada com senha, permissões, reorder/remoção/limpeza de playlist, chat, presença, reentrada e ações do player pelo SignalR. Não executam npm, Vite ou o frontend React.
+
+A integração HTTP/SignalR usa `WebApplicationFactory` e o host isolado existente, com controllers, hub, serviços e domínio reais, repositórios em memória e transporte Long Polling suportado pelo SignalR. Não carrega `.env`, não abre a porta 5199, não inicia o bootstrap da API real e não executa migrations. Esses testes não validam PostgreSQL/EF, políticas CORS/rate limiting do bootstrap de produção ou indisponibilidade do YouTube externo.
+
 ## Docker e escolha de frontend
 
 O `docker-compose.yml` publica **React** no serviço `client`, usando `react-client.Dockerfile`. O Traefik mantém `https://www.assistajunto.com.br`, o certificado e o redirecionamento de `assistajunto.com.br` para `www`. A API mantém seu domínio e o React encaminha `/api` e `/hubs` pelo nginx à mesma API interna.
